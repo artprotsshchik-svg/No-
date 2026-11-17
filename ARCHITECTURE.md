@@ -36,6 +36,7 @@
 - `.github/workflows/release-windows.yml` — автопроверка веб-сборки, Go-тестов, кросс-компиляции и выпуск `.exe` при теге `v*`.
 
 ## Основные команды
+- `.\build.ps1` — полная локальная сборка Windows GUI (`ModOptimizer-win-x64.exe`) и CLI (`modopt-cli-win-x64.exe`) в `release/`.
 - `npm run sync:data` — обновить `public/data/manifest.json` и `db-bundle.json` после правки JSON.
 - `npm test` — юнит-тесты.
 - `npm run lint` — проверка TypeScript.
