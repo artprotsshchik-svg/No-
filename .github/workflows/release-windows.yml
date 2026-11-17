@@ -14,12 +14,12 @@ jobs:
     name: Test & Build Web Bundle
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
+          node-version: '22'
+          package-manager-cache: false
+      - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: npm run sync:data
       - run: npm test
       - run: npm run lint
@@ -31,12 +31,12 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
+          node-version: '22'
+          package-manager-cache: false
+      - run: npm install --legacy-peer-deps --no-audit --no-fund
       - run: npm run sync:data
       - run: npm run build
 
@@ -52,11 +52,25 @@ jobs:
           Set-Content -Path electron/desktop-config.json -Value $cfg -Encoding UTF8
 
       - name: Install Electron & Build Windows NSIS Delta Package
+        shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm install --no-save electron@33 electron-builder@25 electron-updater@6
-          npx electron-builder --config electron/builder.yml --win nsis --publish always
+          npm install --save --legacy-peer-deps --no-audit --no-fund electron-updater@6
+          npm install --no-save --legacy-peer-deps --no-audit --no-fund electron@33 electron-builder@25
+          $publishMode = if ("${{ github.ref }}".StartsWith("refs/tags/v")) { "always" } else { "never" }
+          npx electron-builder --config electron/builder.yml --win nsis --publish $publishMode
+
+      - name: Upload Windows Installer Artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: mod-optimizer-windows
+          path: |
+            release/*.exe
+            release/*.blockmap
+            release/latest.yml
+            public/data/manifest.json
+            public/data/db-bundle.json
 
       - name: Upload Hot Data Manifest & Bundle to Release
         if: startsWith(github.ref, 'refs/tags/v')

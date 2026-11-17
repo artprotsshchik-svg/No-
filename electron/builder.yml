@@ -20,3 +20,4 @@ nsis:
   shortcutName: Mod Optimizer
 publish:
   provider: github
+  releaseType: release
