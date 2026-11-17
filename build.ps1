@@ -11,6 +11,17 @@ $RootDir = $PSScriptRoot
 Push-Location $RootDir
 
 try {
+    foreach ($p in @(
+        (Join-Path $env:ProgramFiles "nodejs"),
+        (Join-Path $env:ProgramFiles "Go\bin"),
+        (Join-Path $env:USERPROFILE "go\bin"),
+        (Join-Path $env:LOCALAPPDATA "Programs\Go\bin")
+    )) {
+        if ($p -and (Test-Path $p) -and -not ($env:Path -split ';' -contains $p)) {
+            $env:Path = "$p;$env:Path"
+        }
+    }
+
     function Assert-Command {
         param([string]$Name, [string]$Hint)
         if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
