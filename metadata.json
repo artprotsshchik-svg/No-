@@ -1,0 +1,6 @@
+{
+  "name": "Minecraft Mod Optimizer Analyzer",
+  "description": "Интерактивный справочник и анализатор модов оптимизации Minecraft: описания, статус поддержки, лучшие актуальные аналоги и правила совместимости.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,66 @@
+name: Build & Release Windows App
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    name: Test & Build Web Bundle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run sync:data
+      - run: npm test
+      - run: npm run lint
+      - run: npm run build
+
+  release-windows:
+    name: Build Windows Installer (.exe + .blockmap delta)
+    needs: verify
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run sync:data
+      - run: npm run build
+
+      - name: Inject GitHub repo into Electron hot-update config
+        shell: pwsh
+        run: |
+          $parts = "${{ github.repository }}".Split("/")
+          $cfg = @{
+            githubOwner = $parts[0]
+            githubRepo = $parts[1]
+            hotManifestUrl = "https://github.com/${{ github.repository }}/releases/latest/download/manifest.json"
+          } | ConvertTo-Json
+          Set-Content -Path electron/desktop-config.json -Value $cfg -Encoding UTF8
+
+      - name: Install Electron & Build Windows NSIS Delta Package
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm install --no-save electron@33 electron-builder@25 electron-updater@6
+          npx electron-builder --config electron/builder.yml --win nsis --publish always
+
+      - name: Upload Hot Data Manifest & Bundle to Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.ref_name }}" public/data/manifest.json public/data/db-bundle.json --clobber

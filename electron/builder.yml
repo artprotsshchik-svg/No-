@@ -1,0 +1,22 @@
+appId: com.modoptimizer.forge1201
+productName: Mod Optimizer
+copyright: Copyright © 2026 Mod Optimizer
+directories:
+  output: release
+  buildResources: public
+files:
+  - dist/**/*
+  - electron/**/*
+  - package.json
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  differentialPackage: true
+  shortcutName: Mod Optimizer
+publish:
+  provider: github
