@@ -1,37 +1,42 @@
-# Mod Optimizer — Карта проекта (для быстрой работы с минимальным расходом токенов)
+# Mod Optimizer — Карта проекта (для минимального расхода токенов)
 
-Этот файл помогает разработчику и ИИ-ассистенту не читать лишние файлы.
+Короткий индекс: при правке данных или UI читайте только нужный узкий модуль.
 
-## Где лежат данные (JSON-шарды, править нужный кусок вместо всего каталога)
-- `src/data/db/meta.json` — актуальная дата проверки базы (`updatedAt`).
-- `src/data/db/mods-render.json` — рендер, шейдеры, Sinytra, LOD/Nvidium, куллинг, освещение, апскейл.
-- `src/data/db/mods-memory-cpu.json` — память (RAM), запуск, CPU/потоки, частицы и звук, пресеты для слабых ПК.
-- `src/data/db/mods-world-tps.json` — чанки, генерация мира, тики/TPS, физика и ИИ.
-- `src/data/db/mods-net-recipes-misc.json` — сеть, рецепты (JEI/EMI/TMRV), дроп/опыт, фиксы, профилировщики.
-- `src/data/db/presets.json` — готовые сборки (вкладка «Сборки»).
-- `src/data/db/rules.json` — правила несовместимостей.
-- `src/data/db/groups.json` — группы аналогов и их лидеры.
-- `src/data/db/golden.json` — золотой стандарт лидеров.
-- `src/data/modsData.ts` — короткий TS-фасад (~75 строк), объединяющий все JSON-шарды.
+## База модов (`src/data/db/`)
+- `meta.json` — дата проверки базы (`updatedAt`).
+- `mod-dates.json` — даты обновлений отдельных модов.
+- `presets.json` — основные сборки Nvidium и Alloyium (`Сборки`).
+- `rules.json` — правила несовместимостей.
+- `groups.json` — группы аналогов и лидеры.
+- `mods-render.json`, `mods-memory-cpu.json`, `mods-world-tps.json`, `mods-net-recipes-misc.json` — шарды каталога модов.
+- `src/data/modsData.ts` — короткий TS-фасад, собирающий JSON-шарды.
 
-## Логика и интерфейс
-- `src/utils/modLogic.ts` — проверка конфликтов, умный подбор, дерево «Мод → Аддоны», даты обновлений (`MOD_LAST_UPDATED_MAP`), экспорт текста.
-- `src/utils/modLogic.test.ts` — автотесты (`npm test`).
-- `src/components/CheckerTab.tsx` — вкладка «Чекер» + сканер папки `mods/` в Windows-версии (`window.desktopAPI`).
-- `src/components/AssemblyBuilderTab.tsx` — конструктор «Клипание сборок».
-- `src/components/ModDetailModal.tsx` — карточка подробностей мода.
-- `src/App.tsx` — каркас навигации, вкладки «Каталог», «Сборки», «Золотой стандарт», «Отчёт».
+## Логика (`src/utils/`, разбита на мелкие модули)
+- `modTypes.ts` — типы настроек, результатов и статусов.
+- `modDates.ts` — чтение `mod-dates.json`.
+- `modAnalyzer.ts` — зависимости, конфликты, совместимость JEI/EMI и тиры.
+- `modBuilder.ts` — умный подбор, фиксы, переключение модов.
+- `modTree.ts` — дерево «Мод → Аддоны» и текстовый экспорт.
+- `modLogic.ts` — реэкспорт модулей (~5 строк).
+- `jarMatcher.ts` — сопоставление `.jar` из локальной папки `.minecraft/mods`.
+- `persistence.ts` — сохранение вкладок, настроек и дат между перезапусками.
+- `modLogic.test.ts` — автотесты (`npm test`).
 
-## Windows-приложение (Electron + Умное обновление)
-- `electron/main.cjs` + `electron/preload.cjs` — окно Electron, сканер локальной папки `.minecraft/mods` и `.connector`, 2-уровневый апдейтер:
-  1. **Горячее обновление базы:** проверяет `manifest.json` -> качает только `db-bundle.json` в `%AppData%` без переустановки `.exe`.
-  2. **Дельта-обновление программы:** `electron-updater` + `.blockmap` через GitHub Releases (`electron/builder.yml`).
-- `.github/workflows/release-windows.yml` — автосборка Windows-установщика на `windows-latest` при пуше тега `v*`.
+## Интерфейс (`src/components/` + `src/App.tsx`)
+- `src/App.tsx` — каркас шапки (4 вкладки), полоса дат и сохранение состояния.
+- `CatalogTab.tsx` — вкладка «Каталог».
+- `AssemblyBuilderTab.tsx` — «Клипание сборок» (2 секции: Оптимизация и JEI / EMI).
+- `PresetsTab.tsx` — вкладка «Сборки» (Nvidium и Alloyium).
+- `CheckerTab.tsx` — вкладка «Чекер» + сканер `.jar`.
+- `desktopBridge.ts` — мост фронтенда для desktop-оболочки на Go + WebView2.
+- `ModDetailModal.tsx` — карточка подробностей мода.
+
+## Windows-приложение (Go + системный Edge WebView2 + CLI)
+- `desktop/main.go`, `core.go`, `server.go`, `gui_windows.go` — нативный Windows-клиент без Electron (~7 МБ `.exe`, системный WebView2), сканер `.minecraft/mods`, хранение `app-state.json`, горячее обновление базы и консольный режим (`modopt-cli` / `scan`).
+- `.github/workflows/release-windows.yml` — автопроверка веб-сборки, Go-тестов, кросс-компиляции и выпуск `.exe` при теге `v*`.
 
 ## Основные команды
-- `npm test` — прогнать юнит-тесты (`tsx --test src/utils/modLogic.test.ts`).
-- `npm run lint` — проверка TypeScript (`tsc --noEmit`).
-- `npm run sync:data` — пересобрать `public/data/manifest.json` и `db-bundle.json` (перед релизом / после правки JSON).
-- `npm run build` — сборка фронтенда (`dist/`).
-- На Windows локально для сборки `.exe`:
-  `npm install --no-save electron electron-builder electron-updater && npx electron-builder --config electron/builder.yml --win nsis`
+- `npm run sync:data` — обновить `public/data/manifest.json` и `db-bundle.json` после правки JSON.
+- `npm test` — юнит-тесты.
+- `npm run lint` — проверка TypeScript.
+- `npm run build` — сборка фронтенда.

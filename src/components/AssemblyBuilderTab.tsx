@@ -63,6 +63,7 @@ interface AssemblyBuilderTabProps {
 }
 
 type BuilderSort = 'smart' | 'green-first' | 'alpha';
+type BuilderSection = 'all' | 'optimization' | 'recipes';
 type SlotFilter = 'all' | 'selected' | 'issues';
 type ExtraDrawerFilter = 'all' | 'viable' | 'legacy';
 
@@ -105,6 +106,7 @@ export function AssemblyBuilderTab({
   });
   const [anchorSearch, setAnchorSearch] = useState('');
   const [sortMode, setSortMode] = useState<BuilderSort>('smart');
+  const [builderSection, setBuilderSection] = useState<BuilderSection>('all');
   const [slotFilter, setSlotFilter] = useState<SlotFilter>('all');
   const [slotSearch, setSlotSearch] = useState('');
   const [strictExclusive, setStrictExclusive] = useState(true);
@@ -384,6 +386,10 @@ export function AssemblyBuilderTab({
   const visibleGroups = useMemo(() => {
     const q = slotSearch.trim().toLowerCase();
     return MOD_GROUPS.filter(group => {
+      const isRecipeGroup = group.id === 'recipes-jei';
+      if (builderSection === 'optimization' && isRecipeGroup) return false;
+      if (builderSection === 'recipes' && !isRecipeGroup) return false;
+
       const selectedInGroup = group.memberIds.filter(id => selectedSet.has(id));
       const hasIssues =
         missingSlotGroupIds.has(group.id) ||
@@ -399,7 +405,16 @@ export function AssemblyBuilderTab({
         return m && (m.name.toLowerCase().includes(q) || m.description.toLowerCase().includes(q));
       });
     });
-  }, [slotSearch, slotFilter, selectedSet, missingSlotGroupIds, analysis.conflictingIdSet, warningByMod, modById]);
+  }, [slotSearch, slotFilter, builderSection, selectedSet, missingSlotGroupIds, analysis.conflictingIdSet, warningByMod, modById]);
+
+  const optimizationGroups = useMemo(
+    () => visibleGroups.filter(g => g.id !== 'recipes-jei'),
+    [visibleGroups]
+  );
+  const recipeGroups = useMemo(
+    () => visibleGroups.filter(g => g.id === 'recipes-jei'),
+    [visibleGroups]
+  );
 
   const restrictionTextClass = (tone: 'red' | 'amber' | 'violet' | 'sky') => {
     switch (tone) {
@@ -430,30 +445,30 @@ export function AssemblyBuilderTab({
   return (
     <div className="space-y-4">
       {/* Control Bench */}
-      <div className="bg-[#111317] border border-[#20242b] rounded-lg p-4 space-y-4">
+      <div className="bg-[#111824] border border-[#2a384e] rounded-xl p-4 space-y-4 shadow-lg shadow-black/25">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold text-zinc-100 tracking-tight">Конфигуратор сборки</h2>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              Подбирает совместимые моды, разруливает конфликты и подтягивает обязательные зависимости.
+            <h2 className="text-base font-semibold text-slate-50 tracking-tight">Конфигуратор сборки</h2>
+            <p className="text-xs text-slate-300 mt-0.5">
+              Разделено на 2 секции: Оптимизация и JEI / EMI (рецепты). Автоматически подтягивает зависимости и исключает конфликты.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setAutoClip(v => !v)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
                 autoClip
-                  ? 'bg-[#1a1e25] border-[#2e343f] text-zinc-100'
-                  : 'bg-[#0c0d10] border-[#20242b] text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-[#182233] border-[#384b69] text-slate-50'
+                  : 'bg-[#0b1019] border-[#253348] text-slate-300 hover:text-white'
               }`}
               title="Автоматически пересобирать список при смене параметров"
             >
-              <Zap className={`w-3.5 h-3.5 ${autoClip ? 'text-emerald-400' : 'text-zinc-500'}`} />
+              <Zap className={`w-3.5 h-3.5 ${autoClip ? 'text-emerald-300' : 'text-slate-400'}`} />
               {autoClip ? 'Автопересчёт' : 'Вручную'}
             </button>
             <button
               onClick={handleAutoAssemble}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold transition-colors whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-sky-400 hover:bg-sky-300 text-slate-950 text-xs font-semibold transition-colors whitespace-nowrap shrink-0"
             >
               <Wand2 className="w-3.5 h-3.5" />
               Пересобрать
@@ -468,7 +483,7 @@ export function AssemblyBuilderTab({
                 setExcludedNotes([]);
                 setActionNotice({ text: 'Список модов и упор очищены.', tone: 'info' });
               }}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-[#171a20] hover:bg-[#1f232b] border border-[#252a33] text-zinc-300 text-xs font-medium transition-colors whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#182233] hover:bg-[#223048] border border-[#344663] text-slate-100 text-xs font-medium transition-colors whitespace-nowrap shrink-0"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               Сброс
@@ -476,184 +491,195 @@ export function AssemblyBuilderTab({
           </div>
         </div>
 
-        {/* Profile Matrix */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-3 border-t border-[#1e222a]">
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-medium text-zinc-400">Видеокарта</label>
-            <div className="grid grid-cols-3 gap-0.5 bg-[#0c0d10] p-1 rounded-md border border-[#1e222a]">
-              {[
-                { k: 'nvidia', label: 'NVIDIA' },
-                { k: 'amd-intel', label: 'AMD/Intel' },
-                { k: 'integrated', label: 'Слабая' },
-              ].map(opt => (
-                <button
-                  key={opt.k}
-                  onClick={() => applyPrefs(p => ({ ...p, gpu: opt.k as AssemblyPreferences['gpu'] }))}
-                  className={`py-1 px-1.5 rounded text-xs font-medium transition-colors whitespace-nowrap ${
-                    prefs.gpu === opt.k ? 'bg-[#232832] text-zinc-100' : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+        {/* Section 1: Оптимизация */}
+        <div className="pt-3 border-t border-[#243044] space-y-3" data-section="optimization-controls">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-mono font-semibold text-sky-300">01</span>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-100">
+                Секция: Оптимизация
+              </h3>
             </div>
+            <span className="text-[11px] text-slate-400 hidden sm:inline">
+              Железо, профиль, шейдеры и порты Forge / Sinytra
+            </span>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-medium text-zinc-400">Цель</label>
-            <div className="grid grid-cols-3 gap-0.5 bg-[#0c0d10] p-1 rounded-md border border-[#1e222a]">
-              {[
-                { k: 'balanced', label: 'Баланс' },
-                { k: 'max-safe', label: 'Макс.' },
-                { k: 'potato', label: 'Слабый ПК' },
-              ].map(opt => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-slate-300">Видеокарта</label>
+              <div className="grid grid-cols-3 gap-0.5 bg-[#0b1019] p-1 rounded-lg border border-[#253348]">
+                {[
+                  { k: 'nvidia', label: 'NVIDIA' },
+                  { k: 'amd-intel', label: 'AMD/Intel' },
+                  { k: 'integrated', label: 'Слабая' },
+                ].map(opt => (
+                  <button
+                    key={opt.k}
+                    onClick={() => applyPrefs(p => ({ ...p, gpu: opt.k as AssemblyPreferences['gpu'] }))}
+                    className={`py-1.5 px-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
+                      prefs.gpu === opt.k ? 'bg-[#1e2d44] text-white font-semibold' : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-slate-300">Цель</label>
+              <div className="grid grid-cols-3 gap-0.5 bg-[#0b1019] p-1 rounded-lg border border-[#253348]">
+                {[
+                  { k: 'balanced', label: 'Баланс' },
+                  { k: 'max-safe', label: 'Макс.' },
+                  { k: 'potato', label: 'Слабый ПК' },
+                ].map(opt => (
+                  <button
+                    key={opt.k}
+                    onClick={() => applyPrefs(p => ({ ...p, goal: opt.k as AssemblyPreferences['goal'] }))}
+                    className={`py-1.5 px-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
+                      prefs.goal === opt.k ? 'bg-[#1e2d44] text-white font-semibold' : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-slate-300">Среда</label>
+              <div className="grid grid-cols-3 gap-0.5 bg-[#0b1019] p-1 rounded-lg border border-[#253348]">
+                {[
+                  { k: 'singleplayer', label: 'Соло' },
+                  { k: 'server', label: 'Сервер' },
+                  { k: 'hybrid-server', label: 'Гибрид' },
+                ].map(opt => (
+                  <button
+                    key={opt.k}
+                    onClick={() => applyPrefs(p => ({ ...p, mode: opt.k as AssemblyPreferences['mode'] }))}
+                    className={`py-1.5 px-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
+                      prefs.mode === opt.k ? 'bg-[#1e2d44] text-white font-semibold' : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-slate-300">Модули</label>
+              <div className="grid grid-cols-3 gap-1">
                 <button
-                  key={opt.k}
-                  onClick={() => applyPrefs(p => ({ ...p, goal: opt.k as AssemblyPreferences['goal'] }))}
-                  className={`py-1 px-1.5 rounded text-xs font-medium transition-colors whitespace-nowrap ${
-                    prefs.goal === opt.k ? 'bg-[#232832] text-zinc-100' : 'text-zinc-400 hover:text-zinc-200'
+                  onClick={() => applyPrefs(p => ({ ...p, useShaders: !p.useShaders }))}
+                  className={`px-2 py-1.5 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap ${
+                    prefs.useShaders
+                      ? 'bg-sky-500/20 border-sky-400/60 text-sky-100'
+                      : 'bg-[#0b1019] border-[#253348] text-slate-300 hover:text-white'
                   }`}
                 >
-                  {opt.label}
+                  Шейдеры
                 </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-medium text-zinc-400">Среда</label>
-            <div className="grid grid-cols-3 gap-0.5 bg-[#0c0d10] p-1 rounded-md border border-[#1e222a]">
-              {[
-                { k: 'singleplayer', label: 'Соло' },
-                { k: 'server', label: 'Сервер' },
-                { k: 'hybrid-server', label: 'Гибрид' },
-              ].map(opt => (
                 <button
-                  key={opt.k}
-                  onClick={() => applyPrefs(p => ({ ...p, mode: opt.k as AssemblyPreferences['mode'] }))}
-                  className={`py-1 px-1.5 rounded text-xs font-medium transition-colors whitespace-nowrap ${
-                    prefs.mode === opt.k ? 'bg-[#232832] text-zinc-100' : 'text-zinc-400 hover:text-zinc-200'
+                  onClick={() => applyPrefs(p => ({ ...p, useCreate: !p.useCreate }))}
+                  className={`px-2 py-1.5 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap ${
+                    prefs.useCreate
+                      ? 'bg-amber-500/20 border-amber-400/60 text-amber-100'
+                      : 'bg-[#0b1019] border-[#253348] text-slate-300 hover:text-white'
                   }`}
                 >
-                  {opt.label}
+                  Create
                 </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-medium text-zinc-400">Размер пака</label>
-            <div className="grid grid-cols-2 gap-0.5 bg-[#0c0d10] p-1 rounded-md border border-[#1e222a]">
-              {[
-                { k: 'light', label: 'Лёгкий (<120)' },
-                { k: 'heavy', label: 'Тяжёлый (200+)' },
-              ].map(opt => (
                 <button
-                  key={opt.k}
-                  onClick={() => applyPrefs(p => ({ ...p, packSize: opt.k as AssemblyPreferences['packSize'] }))}
-                  className={`py-1 px-1.5 rounded text-xs font-medium transition-colors whitespace-nowrap ${
-                    prefs.packSize === opt.k ? 'bg-[#232832] text-zinc-100' : 'text-zinc-400 hover:text-zinc-200'
+                  onClick={() =>
+                    applyPrefs(p => {
+                      const nextSinytra = !p.allowSinytra;
+                      return {
+                        ...p,
+                        allowSinytra: nextSinytra,
+                        portStrategy: nextSinytra
+                          ? p.portStrategy === 'native-forge'
+                            ? 'hybrid'
+                            : p.portStrategy
+                          : 'native-forge',
+                      };
+                    })
+                  }
+                  className={`px-2 py-1.5 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap ${
+                    prefs.allowSinytra
+                      ? 'bg-sky-500/20 border-sky-400/60 text-sky-100'
+                      : 'bg-[#0b1019] border-[#253348] text-slate-300 hover:text-white'
                   }`}
                 >
-                  {opt.label}
+                  Sinytra
                 </button>
-              ))}
+              </div>
             </div>
           </div>
+        </div>
 
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-medium text-zinc-400">
-              Рецепты (JEI / EMI{prefs.recipeViewer === 'emi' ? ' + TMRV' : ''})
-            </label>
-            <div className="grid grid-cols-4 gap-0.5 bg-[#0c0d10] p-1 rounded-md border border-[#1e222a]">
-              {[
-                { k: 'none', label: 'Нет' },
-                { k: 'jei', label: 'JEI' },
-                { k: 'emi', label: 'EMI' },
-                { k: 'emi-jei', label: 'EMI+JEI' },
-              ].map(opt => (
+        {/* Section 2: JEI / EMI (рецепты) */}
+        <div className="pt-3 border-t border-[#243044] space-y-2.5" data-section="recipes-controls">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-mono font-semibold text-sky-300">02</span>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-100">
+                Секция: JEI / EMI (рецепты)
+              </h3>
+            </div>
+            <span className="text-[11px] text-slate-300">
+              {(prefs.recipeViewer ?? 'jei') === 'emi'
+                ? 'EMI + прослойка TMRV Updated (запускает JEI-плагины без самого JEI)'
+                : (prefs.recipeViewer ?? 'jei') === 'emi-jei'
+                  ? 'EMI + JEI совместно (TMRV не нужен)'
+                  : (prefs.recipeViewer ?? 'jei') === 'jei'
+                    ? 'Классический JEI + ускорение поиска'
+                    : 'Просмотрщик рецептов отключён'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-4 gap-1 bg-[#0b1019] p-1 rounded-lg border border-[#253348] max-w-xl">
+            {[
+              { k: 'none', label: 'Нет' },
+              { k: 'jei', label: 'JEI' },
+              { k: 'emi', label: 'EMI' },
+              { k: 'emi-jei', label: 'EMI+JEI' },
+            ].map(opt => {
+              const active = (prefs.recipeViewer ?? 'jei') === opt.k;
+              return (
                 <button
                   key={opt.k}
                   onClick={() =>
                     applyPrefs(p => ({ ...p, recipeViewer: opt.k as RecipeViewerChoice }))
                   }
-                  className={`py-1 px-1.5 rounded text-xs font-medium transition-colors whitespace-nowrap ${
-                    (prefs.recipeViewer ?? 'jei') === opt.k
-                      ? opt.k === 'emi'
-                        ? 'bg-sky-500/25 text-sky-200'
-                        : 'bg-[#232832] text-zinc-100'
-                      : 'text-zinc-400 hover:text-zinc-200'
+                  className={`py-1.5 px-2 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
+                    active
+                      ? 'bg-sky-400 text-slate-950 font-semibold'
+                      : 'text-slate-300 hover:text-white'
                   }`}
                 >
                   {opt.label}
                 </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-medium text-zinc-400">Модули</label>
-            <div className="flex flex-wrap gap-1">
-              <button
-                onClick={() => applyPrefs(p => ({ ...p, useShaders: !p.useShaders }))}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors whitespace-nowrap ${
-                  prefs.useShaders
-                    ? 'bg-[#232832] border-sky-400/50 text-sky-300'
-                    : 'bg-[#0c0d10] border-[#1e222a] text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                Шейдеры
-              </button>
-              <button
-                onClick={() => applyPrefs(p => ({ ...p, useCreate: !p.useCreate }))}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors whitespace-nowrap ${
-                  prefs.useCreate
-                    ? 'bg-[#232832] border-amber-400/50 text-amber-300'
-                    : 'bg-[#0c0d10] border-[#1e222a] text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                Create
-              </button>
-              <button
-                onClick={() =>
-                  applyPrefs(p => {
-                    const nextSinytra = !p.allowSinytra;
-                    return {
-                      ...p,
-                      allowSinytra: nextSinytra,
-                      portStrategy: nextSinytra
-                        ? p.portStrategy === 'native-forge'
-                          ? 'hybrid'
-                          : p.portStrategy
-                        : 'native-forge',
-                    };
-                  })
-                }
-                className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors whitespace-nowrap ${
-                  prefs.allowSinytra
-                    ? 'bg-[#232832] border-sky-400/50 text-sky-300'
-                    : 'bg-[#0c0d10] border-[#1e222a] text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                Sinytra
-              </button>
-            </div>
+              );
+            })}
           </div>
         </div>
 
         {/* Port Strategy + Dual Port Switcher */}
-        <div className="pt-3 border-t border-[#1e222a] space-y-2.5">
+        <div className="pt-3 border-t border-[#243044] space-y-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <ArrowLeftRight className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-              <span className="text-xs font-semibold text-zinc-100">Реализация аналоговых портов</span>
-              <span className="text-[11px] text-zinc-500 hidden md:inline">
+              <ArrowLeftRight className="w-3.5 h-3.5 text-sky-300 shrink-0" />
+              <span className="text-xs font-semibold text-slate-100">Реализация аналоговых портов</span>
+              <span className="text-[11px] text-slate-400 hidden md:inline">
                 · нативный Forge или Fabric через Sinytra
               </span>
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-0.5 bg-[#0c0d10] p-1 rounded-md border border-[#1e222a]">
+              <div className="flex items-center gap-0.5 bg-[#0b1019] p-1 rounded-lg border border-[#253348]">
                 {[
                   { k: 'native-forge', label: 'Нативный Forge' },
                   { k: 'hybrid', label: 'Гибрид' },
@@ -670,8 +696,8 @@ export function AssemblyBuilderTab({
                           allowSinytra: opt.k === 'fabric-sinytra' ? true : opt.k === 'hybrid' ? true : p.allowSinytra,
                         }))
                       }
-                      className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors whitespace-nowrap ${
-                        active ? 'bg-zinc-100 text-zinc-950' : 'text-zinc-400 hover:text-zinc-200'
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap ${
+                        active ? 'bg-sky-400 text-slate-950 font-semibold' : 'text-slate-300 hover:text-white'
                       }`}
                     >
                       {opt.label}
@@ -682,7 +708,7 @@ export function AssemblyBuilderTab({
 
               <button
                 onClick={() => setShowPortPairs(v => !v)}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-[#0c0d10] hover:bg-[#171a20] border border-[#1e222a] text-[11px] text-zinc-300 transition-colors whitespace-nowrap"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#0b1019] hover:bg-[#182233] border border-[#253348] text-[11px] text-slate-200 transition-colors whitespace-nowrap"
               >
                 {showPortPairs ? 'Скрыть пары' : 'Пары (4)'}
                 {showPortPairs ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -701,26 +727,26 @@ export function AssemblyBuilderTab({
                 return (
                   <div
                     key={pair.id}
-                    className="bg-[#0c0d10] border border-[#1e222a] rounded-md p-2.5 flex flex-col justify-between gap-2"
+                    className="bg-[#0b1019] border border-[#243248] rounded-lg p-2.5 flex flex-col justify-between gap-2"
                   >
                     <div className="flex items-center justify-between gap-2 text-[11px]">
-                      <span className="font-medium text-zinc-200 truncate">{pair.title}</span>
+                      <span className="font-semibold text-slate-100 truncate">{pair.title}</span>
                       {!isForgeActive && !isFabricActive && (
-                        <span className="text-[10px] text-zinc-500 shrink-0">не выбран</span>
+                        <span className="text-[10px] text-slate-400 shrink-0">не выбран</span>
                       )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-1">
                       <button
                         onClick={() => handleChoosePortVariant(pair.forgeModId, pair.fabricModId, pair.forgeLabel, false)}
-                        className={`px-2 py-1.5 rounded text-left border transition-colors ${
+                        className={`px-2 py-1.5 rounded-md text-left border transition-colors ${
                           isForgeActive
-                            ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'
-                            : 'bg-[#14171d] border-[#22262e] text-zinc-400 hover:text-zinc-200 hover:border-[#323844]'
+                            ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-100'
+                            : 'bg-[#141d2c] border-[#273549] text-slate-300 hover:text-white hover:border-[#42587a]'
                         }`}
                       >
-                        <div className="text-[10px] font-medium opacity-80">Forge порт</div>
-                        <div className="text-[11px] font-semibold truncate text-zinc-100">
+                        <div className="text-[10px] font-medium opacity-90">Forge порт</div>
+                        <div className="text-[11px] font-semibold truncate text-white">
                           {pair.forgeModId === 'vmp-forge'
                             ? 'VMP (Forge)'
                             : pair.forgeModId === 'concurrent-chunk-management-engine-forge-c2me'
@@ -731,14 +757,14 @@ export function AssemblyBuilderTab({
 
                       <button
                         onClick={() => handleChoosePortVariant(pair.fabricModId, pair.forgeModId, pair.fabricLabel, true)}
-                        className={`px-2 py-1.5 rounded text-left border transition-colors ${
+                        className={`px-2 py-1.5 rounded-md text-left border transition-colors ${
                           isFabricActive
-                            ? 'bg-sky-500/10 border-sky-400/40 text-sky-300'
-                            : 'bg-[#14171d] border-[#22262e] text-zinc-400 hover:text-zinc-200 hover:border-[#323844]'
+                            ? 'bg-sky-500/20 border-sky-400/60 text-sky-100'
+                            : 'bg-[#141d2c] border-[#273549] text-slate-300 hover:text-white hover:border-[#42587a]'
                         }`}
                       >
-                        <div className="text-[10px] font-medium opacity-80">Fabric + Sinytra</div>
-                        <div className="text-[11px] font-semibold truncate text-zinc-100">
+                        <div className="text-[10px] font-medium opacity-90">Fabric + Sinytra</div>
+                        <div className="text-[11px] font-semibold truncate text-white">
                           {pair.fabricModId === 'very-many-players-vmp'
                             ? 'VMP (Fabric)'
                             : fabricMod?.name.split('(')[0].trim() || pair.fabricLabel}
@@ -746,7 +772,7 @@ export function AssemblyBuilderTab({
                       </button>
                     </div>
 
-                    <div className="text-[10px] text-zinc-500 leading-snug line-clamp-2">
+                    <div className="text-[10px] text-slate-400 leading-snug line-clamp-2">
                       {isFabricActive ? pair.fabricSummary : pair.forgeSummary}
                     </div>
                   </div>
@@ -757,22 +783,22 @@ export function AssemblyBuilderTab({
         </div>
 
         {/* Anchor Mod Focus */}
-        <div className="pt-3 border-t border-[#1e222a] space-y-2">
+        <div className="pt-3 border-t border-[#243044] space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Crosshair className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-              <span className="text-xs font-semibold text-zinc-100">Упор на конкретный мод</span>
-              <span className="text-[11px] text-zinc-500 hidden sm:inline">
+              <Crosshair className="w-3.5 h-3.5 text-sky-300 shrink-0" />
+              <span className="text-xs font-semibold text-slate-100">Упор на конкретный мод</span>
+              <span className="text-[11px] text-slate-400 hidden sm:inline">
                 · пересобирает сборку и зависимости вокруг него
               </span>
             </div>
 
             {anchorMod && (
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-sky-500/10 border border-sky-400/35 text-xs text-sky-300">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-sky-500/20 border border-sky-400/50 text-xs text-sky-100">
                 <span className="font-medium">Упор: {anchorMod.name}</span>
                 <button
                   onClick={() => handleSelectAnchor(null)}
-                  className="p-0.5 rounded hover:bg-white/10 text-sky-300 hover:text-white"
+                  className="p-0.5 rounded hover:bg-white/10 text-sky-200 hover:text-white"
                   title="Сбросить упор"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -783,16 +809,16 @@ export function AssemblyBuilderTab({
 
           <div className="flex flex-col lg:flex-row lg:items-center gap-2">
             <div className="relative w-full lg:w-64 shrink-0">
-              <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={anchorSearch}
                 onChange={e => setAnchorSearch(e.target.value)}
                 placeholder="Выбрать любой мод для упора..."
-                className="w-full pl-8 pr-3 py-1.5 bg-[#0c0d10] border border-[#20242b] rounded-md text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-sky-400"
+                className="w-full pl-8 pr-3 py-1.5 bg-[#0b1019] border border-[#2a384e] rounded-lg text-xs text-slate-100 placeholder-slate-400 focus:border-sky-400"
               />
               {anchorSuggestions.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-[#15181e] border border-[#2c313b] rounded-lg shadow-2xl divide-y divide-[#20242b] max-h-60 overflow-y-auto">
+                <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-[#141d2c] border border-[#364966] rounded-lg shadow-2xl divide-y divide-[#223044] max-h-60 overflow-y-auto">
                   {anchorSuggestions.map(s => {
                     const tier = getBaseHealthTier(s);
                     const tierChip = tierShortLabel(tier);
@@ -800,11 +826,11 @@ export function AssemblyBuilderTab({
                       <button
                         key={s.id}
                         onClick={() => handleSelectAnchor(s.id)}
-                        className="w-full px-3 py-2 text-left hover:bg-[#1e222a] flex items-center justify-between gap-2"
+                        className="w-full px-3 py-2 text-left hover:bg-[#1c283c] flex items-center justify-between gap-2"
                       >
                         <div className="min-w-0">
-                          <div className="text-xs font-medium text-zinc-100 truncate">{s.name}</div>
-                          <div className="text-[10px] text-zinc-400 truncate">
+                          <div className="text-xs font-medium text-slate-50 truncate">{s.name}</div>
+                          <div className="text-[10px] text-slate-300 truncate">
                             {s.platform} · {s.statusLabel}
                           </div>
                         </div>
@@ -835,10 +861,10 @@ export function AssemblyBuilderTab({
                   <button
                     key={aid}
                     onClick={() => handleSelectAnchor(aid)}
-                    className={`px-2 py-1 rounded text-[11px] font-medium border transition-colors whitespace-nowrap ${
+                    className={`px-2 py-1 rounded-md text-[11px] font-medium border transition-colors whitespace-nowrap ${
                       active
-                        ? 'bg-sky-500/15 border-sky-400/50 text-sky-200'
-                        : 'bg-[#0c0d10] border-[#1e222a] text-zinc-400 hover:border-[#2e3440] hover:text-zinc-200'
+                        ? 'bg-sky-500/20 border-sky-400/60 text-sky-100'
+                        : 'bg-[#0b1019] border-[#253348] text-slate-300 hover:border-[#42587a] hover:text-white'
                     }`}
                   >
                     {shortLabel}
@@ -851,10 +877,10 @@ export function AssemblyBuilderTab({
 
         {/* Collapsible Logic & Excluded Rationale */}
         {(smartNotes.length > 0 || excludedNotes.length > 0) && (
-          <div className="pt-2 border-t border-[#1e222a]">
+          <div className="pt-2 border-t border-[#243044]">
             <button
               onClick={() => setShowNotesDrawer(v => !v)}
-              className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-100 transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs text-slate-300 hover:text-white transition-colors"
             >
               {showNotesDrawer ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               <span>
@@ -865,23 +891,23 @@ export function AssemblyBuilderTab({
             {showNotesDrawer && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5 mt-2.5">
                 {smartNotes.length > 0 && (
-                  <div className="bg-[#0c0d10] border border-[#1e222a] rounded-md px-3.5 py-2.5 text-xs text-zinc-300 space-y-1">
-                    <div className="text-[11px] font-semibold text-zinc-200">
+                  <div className="bg-[#0b1019] border border-[#243248] rounded-lg px-3.5 py-2.5 text-xs text-slate-200 space-y-1">
+                    <div className="text-[11px] font-semibold text-slate-100">
                       Логика под ваш профиль
                     </div>
                     {smartNotes.map((n, i) => (
-                      <div key={i} className="text-zinc-400">· {n}</div>
+                      <div key={i} className="text-slate-300">· {n}</div>
                     ))}
                   </div>
                 )}
                 {excludedNotes.length > 0 && (
-                  <div className="bg-[#0c0d10] border border-[#1e222a] rounded-md px-3.5 py-2.5 text-xs text-zinc-300 space-y-1">
-                    <div className="text-[11px] font-semibold text-zinc-200">
+                  <div className="bg-[#0b1019] border border-[#243248] rounded-lg px-3.5 py-2.5 text-xs text-slate-200 space-y-1">
+                    <div className="text-[11px] font-semibold text-slate-100">
                       Исключено / заменено
                     </div>
                     {excludedNotes.map((ex, i) => (
-                      <div key={i} className="truncate text-zinc-400" title={`${ex.name}: ${ex.reason}`}>
-                        · <span className="font-medium text-zinc-200">{ex.name}</span> — {ex.reason}
+                      <div key={i} className="truncate text-slate-300" title={`${ex.name}: ${ex.reason}`}>
+                        · <span className="font-medium text-slate-100">{ex.name}</span> — {ex.reason}
                       </div>
                     ))}
                   </div>
@@ -894,10 +920,10 @@ export function AssemblyBuilderTab({
         {/* Smart Action Feedback Banner */}
         {actionNotice && (
           <div
-            className={`rounded-md px-3 py-2 text-xs flex items-center justify-between gap-3 border ${
+            className={`rounded-lg px-3 py-2 text-xs flex items-center justify-between gap-3 border ${
               actionNotice.tone === 'warn'
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-200'
-                : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
+                ? 'bg-amber-500/15 border-amber-400/50 text-amber-100'
+                : 'bg-emerald-500/15 border-emerald-400/50 text-emerald-100'
             }`}
           >
             <span>{actionNotice.text}</span>
@@ -911,21 +937,41 @@ export function AssemblyBuilderTab({
           </div>
         )}
 
-        {/* Slot Filter, Search, Smart Sorting & Safety Toggles */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-[#1e222a]">
+        {/* Section Switcher + Slot Filter, Search, Smart Sorting & Safety Toggles */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-[#243044]">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="relative w-52">
-              <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <div className="flex items-center bg-[#0b1019] border border-[#253348] rounded-lg p-0.5 text-xs" role="group" aria-label="Секции сборок">
+              {[
+                { k: 'all', label: 'Все секции' },
+                { k: 'optimization', label: 'Оптимизация' },
+                { k: 'recipes', label: 'JEI / EMI' },
+              ].map(sec => (
+                <button
+                  key={sec.k}
+                  onClick={() => setBuilderSection(sec.k as BuilderSection)}
+                  className={`px-2.5 py-1 rounded-md font-medium transition-colors whitespace-nowrap ${
+                    builderSection === sec.k
+                      ? 'bg-sky-400 text-slate-950 font-semibold'
+                      : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  {sec.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative w-48">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={slotSearch}
                 onChange={e => setSlotSearch(e.target.value)}
                 placeholder="Найти слот или мод..."
-                className="w-full pl-8 pr-2.5 py-1 bg-[#0c0d10] border border-[#20242b] rounded-md text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-sky-400"
+                className="w-full pl-8 pr-2.5 py-1 bg-[#0b1019] border border-[#2a384e] rounded-lg text-xs text-slate-100 placeholder-slate-400 focus:border-sky-400"
               />
             </div>
 
-            <div className="flex items-center bg-[#0c0d10] border border-[#1e222a] rounded-md p-0.5 text-xs">
+            <div className="flex items-center bg-[#0b1019] border border-[#253348] rounded-lg p-0.5 text-xs">
               {[
                 { k: 'all', label: 'Все слоты' },
                 { k: 'selected', label: 'Выбранные' },
@@ -934,8 +980,8 @@ export function AssemblyBuilderTab({
                 <button
                   key={f.k}
                   onClick={() => setSlotFilter(f.k as SlotFilter)}
-                  className={`px-2 py-0.5 rounded transition-colors whitespace-nowrap ${
-                    slotFilter === f.k ? 'bg-[#232832] text-zinc-100' : 'text-zinc-400 hover:text-zinc-200'
+                  className={`px-2 py-0.5 rounded-md transition-colors whitespace-nowrap ${
+                    slotFilter === f.k ? 'bg-[#1e2d44] text-white font-semibold' : 'text-slate-300 hover:text-white'
                   }`}
                 >
                   {f.label}
@@ -944,7 +990,7 @@ export function AssemblyBuilderTab({
             </div>
 
             <div className="flex items-center gap-1">
-              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
               {[
                 { k: 'smart', label: 'Умный порядок' },
                 { k: 'green-first', label: 'Стабильные' },
@@ -953,8 +999,8 @@ export function AssemblyBuilderTab({
                 <button
                   key={s.k}
                   onClick={() => setSortMode(s.k as BuilderSort)}
-                  className={`px-2 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
-                    sortMode === s.k ? 'bg-[#232832] text-zinc-100' : 'text-zinc-400 hover:text-zinc-200'
+                  className={`px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
+                    sortMode === s.k ? 'bg-[#1e2d44] text-white font-semibold' : 'text-slate-300 hover:text-white'
                   }`}
                 >
                   {s.label}
@@ -966,10 +1012,10 @@ export function AssemblyBuilderTab({
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setStrictExclusive(v => !v)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors whitespace-nowrap ${
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap ${
                 strictExclusive
-                  ? 'bg-[#171a20] border-[#2b313c] text-emerald-300'
-                  : 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                  ? 'bg-[#182233] border-[#344663] text-emerald-300'
+                  : 'bg-amber-500/15 border-amber-400/50 text-amber-200'
               }`}
             >
               {strictExclusive ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
@@ -978,10 +1024,10 @@ export function AssemblyBuilderTab({
 
             <button
               onClick={() => setHideUselessCovered(v => !v)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors whitespace-nowrap tabular-nums ${
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap tabular-nums ${
                 hideUselessCovered
-                  ? 'bg-[#171a20] border-[#2b313c] text-zinc-200'
-                  : 'bg-[#0c0d10] border-[#1e222a] text-zinc-400'
+                  ? 'bg-[#182233] border-[#344663] text-slate-100'
+                  : 'bg-[#0b1019] border-[#253348] text-slate-300'
               }`}
               title="Скрывать плацебо, нерабочие на Forge и моды, функционал которых 100% перекрыт более лучшими модами"
             >
@@ -993,14 +1039,14 @@ export function AssemblyBuilderTab({
 
             <button
               onClick={() => setHideIncompatible(v => !v)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors whitespace-nowrap tabular-nums ${
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap tabular-nums ${
                 hideIncompatible
-                  ? 'bg-sky-500/10 border-sky-400/35 text-sky-200'
-                  : 'bg-[#0c0d10] border-[#1e222a] text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-sky-500/20 border-sky-400/50 text-sky-100'
+                  : 'bg-[#0b1019] border-[#253348] text-slate-300 hover:text-white'
               }`}
               title="Скрывать моды, несовместимые с активными модами сборки, просмотрщиком рецептов (JEI/EMI) или прослойками"
             >
-              {hideIncompatible ? <EyeOff className="w-3.5 h-3.5 text-sky-400" /> : <Eye className="w-3.5 h-3.5" />}
+              {hideIncompatible ? <EyeOff className="w-3.5 h-3.5 text-sky-300" /> : <Eye className="w-3.5 h-3.5" />}
               {hideIncompatible
                 ? `Несовм. скрыты (${incompatibleWithActiveSet.size})`
                 : `Скрыть несовм. (${incompatibleWithActiveSet.size})`}
@@ -1011,14 +1057,39 @@ export function AssemblyBuilderTab({
 
       {/* Main 2-column workspace: Slots Left + Sticky Summary Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* Left: Functional Group Slots */}
-        <div className="lg:col-span-8 space-y-3.5">
+        {/* Left: Functional Group Slots divided into Optimization and JEI / EMI sections */}
+        <div className="lg:col-span-8 space-y-5">
           {visibleGroups.length === 0 ? (
-            <div className="bg-[#111317] border border-[#20242b] rounded-lg p-8 text-center text-xs text-zinc-400">
+            <div className="bg-[#111824] border border-[#2a384e] rounded-xl p-8 text-center text-xs text-slate-300">
               По текущему фильтру слоты не найдены.
             </div>
           ) : (
-            visibleGroups.map(group => {
+            [
+              {
+                key: 'optimization',
+                title: 'Секция 1 · Оптимизация',
+                subtitle: 'Рендер, память, освещение, тики TPS, чанки, сеть и утилиты',
+                groups: optimizationGroups,
+              },
+              {
+                key: 'recipes',
+                title: 'Секция 2 · JEI / EMI (рецепты)',
+                subtitle: 'Просмотрщики рецептов, прослойка TMRV Updated и ускорители крафта',
+                groups: recipeGroups,
+              },
+            ]
+              .filter(sec => sec.groups.length > 0)
+              .map(sec => (
+                <section key={sec.key} className="space-y-3" data-slot-section={sec.key}>
+                  <div className="flex flex-wrap items-baseline justify-between gap-2 px-1">
+                    <div className="flex items-baseline gap-2">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-sky-300">{sec.title}</h3>
+                      <span className="text-xs font-mono text-slate-400 tabular-nums">({sec.groups.length})</span>
+                    </div>
+                    <span className="text-[11px] text-slate-400">{sec.subtitle}</span>
+                  </div>
+                  <div className="space-y-3.5">
+                    {sec.groups.map(group => {
               const addonSet = new Set(group.addonIds);
               const allMembers = group.memberIds
                 .map(id => modById.get(id))
@@ -1091,51 +1162,51 @@ export function AssemblyBuilderTab({
               return (
                 <div
                   key={group.id}
-                  className={`bg-[#111317] border rounded-lg overflow-hidden ${
+                  className={`bg-[#111824] border rounded-xl overflow-hidden shadow-md shadow-black/20 ${
                     hasExclusiveConflict
-                      ? 'border-rose-500/45'
+                      ? 'border-rose-400/60'
                       : isMissingCore
-                        ? 'border-amber-500/35'
-                        : 'border-[#20242b]'
+                        ? 'border-amber-400/50'
+                        : 'border-[#2a384e]'
                   }`}
                 >
                   {/* Clean Slot Header with Unboxed Metadata */}
-                  <div className="px-4 py-3 flex flex-wrap items-start justify-between gap-3 border-b border-[#1b1f26]">
+                  <div className="px-4 py-3 flex flex-wrap items-start justify-between gap-3 border-b border-[#223044]">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
-                        <h3 className="text-sm font-semibold text-zinc-100">{group.title}</h3>
-                        <span className="text-[11px] text-zinc-500 tabular-nums">
+                        <h4 className="text-sm font-semibold text-slate-50">{group.title}</h4>
+                        <span className="text-[11px] text-slate-400 tabular-nums">
                           {group.exclusive ? '1 основа + аддоны' : 'совместимые модули'}
                           <span aria-hidden="true"> · </span>
                           {selectedInGroup.length > 0 ? (
-                            <span className="text-emerald-400 font-medium">выбрано {selectedInGroup.length}</span>
+                            <span className="text-emerald-300 font-semibold">выбрано {selectedInGroup.length}</span>
                           ) : isMissingCore ? (
-                            <span className="text-amber-400 font-medium">рекомендуется</span>
+                            <span className="text-amber-300 font-semibold">рекомендуется</span>
                           ) : (
                             <span>0 выбрано</span>
                           )}
                           {hideIncompatible && hiddenIncompatibleInGroupCount > 0 && (
                             <>
                               <span aria-hidden="true"> · </span>
-                              <span className="text-zinc-500">скрыто несовм. {hiddenIncompatibleInGroupCount}</span>
+                              <span className="text-slate-400">скрыто несовм. {hiddenIncompatibleInGroupCount}</span>
                             </>
                           )}
                           {hideUselessCovered && hiddenSupersededInGroupCount > 0 && (
                             <>
                               <span aria-hidden="true"> · </span>
-                              <span className="text-zinc-500">перекрыто/лишних {hiddenSupersededInGroupCount}</span>
+                              <span className="text-slate-400">перекрыто/лишних {hiddenSupersededInGroupCount}</span>
                             </>
                           )}
                         </span>
                       </div>
-                      <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{group.description}</p>
+                      <p className="text-xs text-slate-300 mt-1 leading-relaxed">{group.description}</p>
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
                       {!selectedSet.has(group.leaderId) && (
                         <button
                           onClick={() => handleQuickSelectSlotLeader(group.id, group.leaderId, group.memberIds)}
-                          className="text-[11px] px-2.5 py-1 rounded bg-[#1a1e25] hover:bg-[#242933] border border-[#2b313d] text-emerald-300 font-medium transition-colors whitespace-nowrap"
+                          className="text-[11px] px-2.5 py-1 rounded-md bg-[#182233] hover:bg-[#223048] border border-[#344663] text-emerald-300 font-semibold transition-colors whitespace-nowrap"
                         >
                           + Лидер
                         </button>
@@ -1143,7 +1214,7 @@ export function AssemblyBuilderTab({
                       {selectedInGroup.length > 0 && (
                         <button
                           onClick={() => handleClearSlot(group.memberIds, group.title)}
-                          className="text-[11px] px-2.5 py-1 rounded bg-[#16191f] hover:bg-[#1f232b] border border-[#232832] text-zinc-400 hover:text-zinc-200 transition-colors whitespace-nowrap"
+                          className="text-[11px] px-2.5 py-1 rounded-md bg-[#0b1019] hover:bg-[#182233] border border-[#253348] text-slate-300 hover:text-white transition-colors whitespace-nowrap"
                         >
                           Очистить
                         </button>
@@ -1151,10 +1222,10 @@ export function AssemblyBuilderTab({
                       {hiddenCount > 0 && (
                         <button
                           onClick={() => setExpandedGroups(prev => ({ ...prev, [group.id]: !prev[group.id] }))}
-                          className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded border font-medium transition-colors whitespace-nowrap tabular-nums ${
+                          className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-md border font-semibold transition-colors whitespace-nowrap tabular-nums ${
                             isExtraOpen
-                              ? 'bg-zinc-100 border-zinc-100 text-zinc-950'
-                              : 'bg-[#171a20] hover:bg-[#20242c] border-[#282d37] text-zinc-200'
+                              ? 'bg-sky-400 border-sky-400 text-slate-950'
+                              : 'bg-[#182233] hover:bg-[#223048] border-[#344663] text-slate-100'
                           }`}
                         >
                           <span>{isExtraOpen ? 'Свернуть доп.' : `Доп. (${hiddenCount})`}</span>
@@ -1165,8 +1236,8 @@ export function AssemblyBuilderTab({
                   </div>
 
                   {hasExclusiveConflict && (
-                    <div className="mx-4 mt-3 bg-rose-500/10 border border-rose-500/30 rounded-md px-3 py-2 text-xs text-rose-200 flex items-start gap-2">
-                      <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                    <div className="mx-4 mt-3 bg-rose-500/15 border border-rose-400/50 rounded-lg px-3 py-2 text-xs text-rose-100 flex items-start gap-2">
+                      <ShieldAlert className="w-4 h-4 text-rose-300 shrink-0 mt-0.5" />
                       <div>
                         <span className="font-semibold">Конфликт внутри слота:</span> выбрано сразу{' '}
                         {selectedInCore.map(id => modById.get(id)?.name).join(' + ')}.{' '}
@@ -1177,15 +1248,15 @@ export function AssemblyBuilderTab({
 
                   {/* Compact Expandable Tray directly beneath header when opened */}
                   {isExtraOpen && extraMembersAll.length > 0 && (
-                    <div className="bg-[#0c0d10] border-b border-[#20242b] p-3 space-y-2.5">
+                    <div className="bg-[#0b1019] border-b border-[#243248] p-3 space-y-2.5">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
-                          <span className="text-[11px] font-semibold text-zinc-300 shrink-0">
+                          <span className="text-[11px] font-semibold text-slate-200 shrink-0">
                             Дополнительные и аналоги
                           </span>
                           {extraMembersAll.length > 6 && (
                             <div className="relative w-44 max-w-full">
-                              <Search className="w-3 h-3 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                              <Search className="w-3 h-3 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                               <input
                                 type="text"
                                 value={extraSearchByGroup[group.id] || ''}
@@ -1193,12 +1264,12 @@ export function AssemblyBuilderTab({
                                   setExtraSearchByGroup(prev => ({ ...prev, [group.id]: e.target.value }))
                                 }
                                 placeholder={`Поиск среди ${extraMembersAll.length}...`}
-                                className="w-full pl-7 pr-2 py-1 bg-[#111317] border border-[#22262e] rounded text-[11px] text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-sky-400"
+                                className="w-full pl-7 pr-2 py-1 bg-[#111824] border border-[#2a384e] rounded-md text-[11px] text-slate-100 placeholder-slate-400 focus:border-sky-400"
                               />
                             </div>
                           )}
 
-                          <div className="flex items-center gap-0.5 bg-[#111317] border border-[#22262e] rounded p-0.5 text-[11px]">
+                          <div className="flex items-center gap-0.5 bg-[#111824] border border-[#2a384e] rounded-md p-0.5 text-[11px]">
                             {[
                               { k: 'all', label: `Все (${extraMembersAll.length})` },
                               { k: 'viable', label: `Рабочие (${viableCount})` },
@@ -1214,8 +1285,8 @@ export function AssemblyBuilderTab({
                                 }
                                 className={`px-2 py-0.5 rounded transition-colors whitespace-nowrap tabular-nums ${
                                   extraFilter === f.k
-                                    ? 'bg-[#232832] text-zinc-100 font-medium'
-                                    : 'text-zinc-400 hover:text-zinc-200'
+                                    ? 'bg-[#1e2d44] text-white font-semibold'
+                                    : 'text-slate-300 hover:text-white'
                                 }`}
                               >
                                 {f.label}
@@ -1228,7 +1299,7 @@ export function AssemblyBuilderTab({
                           {hiddenIncompatibleInGroupCount > 0 && (
                             <button
                               onClick={() => setHideIncompatible(v => !v)}
-                              className="text-[11px] text-sky-400 hover:text-sky-300 px-2 py-1 rounded hover:bg-[#171a20] whitespace-nowrap"
+                              className="text-[11px] text-sky-300 hover:text-sky-200 px-2 py-1 rounded hover:bg-[#182233] whitespace-nowrap"
                             >
                               {hideIncompatible
                                 ? `Показать несовм. (${hiddenIncompatibleInGroupCount})`
@@ -1237,7 +1308,7 @@ export function AssemblyBuilderTab({
                           )}
                           <button
                             onClick={() => setExpandedGroups(prev => ({ ...prev, [group.id]: false }))}
-                            className="inline-flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-100 px-2 py-1 rounded hover:bg-[#171a20] whitespace-nowrap"
+                            className="inline-flex items-center gap-1 text-[11px] text-slate-300 hover:text-white px-2 py-1 rounded hover:bg-[#182233] whitespace-nowrap"
                           >
                             <span>Свернуть</span>
                             <ChevronUp className="w-3.5 h-3.5" />
@@ -1246,7 +1317,7 @@ export function AssemblyBuilderTab({
                       </div>
 
                       {extraFiltered.length === 0 ? (
-                        <div className="py-4 text-center text-xs text-zinc-500">
+                        <div className="py-4 text-center text-xs text-slate-400">
                           По фильтру ничего не найдено.
                         </div>
                       ) : (
@@ -1264,10 +1335,10 @@ export function AssemblyBuilderTab({
                             return (
                               <div
                                 key={mod.id}
-                                className={`rounded border px-2.5 py-1.5 flex items-center justify-between gap-2 transition-colors ${
+                                className={`rounded-md border px-2.5 py-1.5 flex items-center justify-between gap-2 transition-colors ${
                                   isSelected
-                                    ? 'bg-[#181c23] border-sky-400/40'
-                                    : 'bg-[#111317] border-[#1f232b] hover:border-[#2e3440]'
+                                    ? 'bg-[#172336] border-sky-400/60'
+                                    : 'bg-[#111824] border-[#243248] hover:border-[#3c5070]'
                                 }`}
                               >
                                 <label className="flex items-center gap-2 min-w-0 flex-1 cursor-pointer">
@@ -1280,14 +1351,14 @@ export function AssemblyBuilderTab({
                                   />
                                   <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-1.5 min-w-0">
-                                      <span className="text-[11px] font-medium text-zinc-100 truncate">
+                                      <span className="text-[11px] font-medium text-slate-50 truncate">
                                         {mod.name}
                                       </span>
                                       <span className={`text-[9px] px-1 py-0.2 rounded border shrink-0 ${chip.cls}`}>
                                         {chip.text}
                                       </span>
                                     </div>
-                                    <div className="text-[10px] text-zinc-500 truncate">
+                                    <div className="text-[10px] text-slate-400 truncate">
                                       {mod.coveredBy
                                         ? `Встроено: ${mod.coveredBy}`
                                         : getModRestrictionBadge(mod, selectedSet, prefs)?.text ||
@@ -1302,8 +1373,8 @@ export function AssemblyBuilderTab({
                                       onClick={() => handleSelectAnchor(mod.id)}
                                       className={`p-1 rounded transition-colors ${
                                         isAnchor
-                                          ? 'text-sky-300 bg-sky-500/15'
-                                          : 'text-zinc-500 hover:text-zinc-200 hover:bg-[#1b1f27]'
+                                          ? 'text-sky-200 bg-sky-500/20'
+                                          : 'text-slate-400 hover:text-white hover:bg-[#1e2a3f]'
                                       }`}
                                       title="Сделать упор на этот мод"
                                     >
@@ -1312,7 +1383,7 @@ export function AssemblyBuilderTab({
                                   )}
                                   <button
                                     onClick={() => onOpenDetail(mod)}
-                                    className="p-1 rounded text-zinc-500 hover:text-zinc-200 hover:bg-[#1b1f27] transition-colors"
+                                    className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#1e2a3f] transition-colors"
                                     title="Подробнее"
                                   >
                                     <Info className="w-3 h-3" />
@@ -1327,7 +1398,7 @@ export function AssemblyBuilderTab({
                   )}
 
                   {/* Primary Visible Mods List */}
-                  <div className="divide-y divide-[#1a1d24]">
+                  <div className="divide-y divide-[#1e2a3d]">
                     {primaryMembers.map(mod => {
                       const isSelected = selectedSet.has(mod.id);
                       const isLeader = mod.id === group.leaderId;
@@ -1347,12 +1418,12 @@ export function AssemblyBuilderTab({
                           key={mod.id}
                           className={`px-4 py-2.5 flex items-center justify-between gap-3 transition-colors ${
                             isAnchor
-                              ? 'bg-sky-500/[0.07]'
+                              ? 'bg-sky-500/12'
                               : isSelected
                                 ? isDangerOrBad || (hasExclusiveConflict && isCoreExclusiveItem)
-                                  ? 'bg-rose-500/[0.06]'
-                                  : 'bg-white/[0.025]'
-                                : 'hover:bg-white/[0.02]'
+                                  ? 'bg-rose-500/10'
+                                  : 'bg-[#162030]'
+                                : 'hover:bg-white/[0.03]'
                           }`}
                         >
                           <label className="flex items-start gap-3 min-w-0 flex-1 cursor-pointer">
@@ -1366,11 +1437,11 @@ export function AssemblyBuilderTab({
 
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                                <span className="text-[13px] font-semibold text-zinc-100">{mod.name}</span>
-                                <span className={`text-[10px] font-medium px-1.5 py-0.2 rounded border ${tierChip.cls}`}>
+                                <span className="text-[13px] font-semibold text-slate-50">{mod.name}</span>
+                                <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded border ${tierChip.cls}`}>
                                   {tierChip.text}
                                 </span>
-                                <span className="text-[11px] text-zinc-500">
+                                <span className="text-[11px] text-slate-400">
                                   {[
                                     isAnchor ? 'Упор сборки' : null,
                                     isLeader ? 'Лидер' : isAddon ? 'Аддон' : null,
@@ -1385,7 +1456,7 @@ export function AssemblyBuilderTab({
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-zinc-400 truncate mt-0.5">
+                              <p className="text-xs text-slate-300 truncate mt-0.5">
                                 {w ? w.messages[0] : mod.description}
                               </p>
                             </div>
@@ -1395,10 +1466,10 @@ export function AssemblyBuilderTab({
                             {canAnchor && (
                               <button
                                 onClick={() => handleSelectAnchor(mod.id)}
-                                className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors whitespace-nowrap ${
+                                className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap ${
                                   isAnchor
-                                    ? 'bg-sky-500/20 text-sky-300 border border-sky-400/40'
-                                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-[#1b1f27]'
+                                    ? 'bg-sky-500/25 text-sky-100 border border-sky-400/60'
+                                    : 'text-slate-300 hover:text-white hover:bg-[#1e2a3f]'
                                 }`}
                                 title={isAnchor ? 'Сбросить упор' : 'Сделать упор на этот мод и переклипать сборку'}
                               >
@@ -1408,7 +1479,7 @@ export function AssemblyBuilderTab({
                             )}
                             <button
                               onClick={() => onOpenDetail(mod)}
-                              className="p-1.5 rounded text-zinc-400 hover:text-zinc-100 hover:bg-[#1b1f27] transition-colors"
+                              className="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-[#1e2a3f] transition-colors"
                               title="Подробнее и сравнение аналогов"
                             >
                               <Info className="w-3.5 h-3.5" />
@@ -1417,7 +1488,7 @@ export function AssemblyBuilderTab({
                               href={mod.curseforgeUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="p-1.5 rounded text-zinc-400 hover:text-[#f16436] hover:bg-[#1b1f27] transition-colors"
+                              className="p-1.5 rounded-md text-slate-300 hover:text-[#f16436] hover:bg-[#1e2a3f] transition-colors"
                               title="CurseForge"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
@@ -1432,7 +1503,7 @@ export function AssemblyBuilderTab({
                   {hiddenCount > 0 && !isExtraOpen && (
                     <button
                       onClick={() => setExpandedGroups(prev => ({ ...prev, [group.id]: true }))}
-                      className="w-full px-4 py-2 bg-[#0d0f13] hover:bg-[#14171d] border-t border-[#1b1f26] text-xs text-zinc-400 hover:text-zinc-200 flex items-center justify-between transition-colors"
+                      className="w-full px-4 py-2 bg-[#0b1019] hover:bg-[#151e2e] border-t border-[#223044] text-xs text-slate-300 hover:text-white flex items-center justify-between transition-colors"
                     >
                       <span>Показать дополнительные моды и аналоги ({hiddenCount})</span>
                       <ChevronDown className="w-3.5 h-3.5" />
@@ -1440,54 +1511,57 @@ export function AssemblyBuilderTab({
                   )}
                 </div>
               );
-            })
+            })}
+                  </div>
+                </section>
+              ))
           )}
         </div>
 
         {/* Right Sticky Summary */}
         <div className="lg:col-span-4 lg:sticky lg:top-20 space-y-4">
-          <div className="bg-[#111317] border border-[#20242b] rounded-lg p-4 space-y-4">
+          <div className="bg-[#111824] border border-[#2a384e] rounded-xl p-4 space-y-4 shadow-lg shadow-black/25">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-zinc-100">Итог умной сборки</h3>
-              <span className="text-xs font-mono text-zinc-400 tabular-nums">{summaryCounts.total} модов</span>
+              <h3 className="text-sm font-semibold text-slate-50">Итог умной сборки</h3>
+              <span className="text-xs font-mono text-slate-300 tabular-nums">{summaryCounts.total} модов</span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-              <div className="bg-[#0c0d10] border border-emerald-500/25 rounded-md p-2">
-                <div className="text-lg font-bold text-emerald-400 tabular-nums">{summaryCounts.green}</div>
-                <div className="text-[10px] text-zinc-400">Стабильно</div>
+              <div className="bg-[#0b1019] border border-emerald-400/35 rounded-lg p-2">
+                <div className="text-lg font-bold text-emerald-300 tabular-nums">{summaryCounts.green}</div>
+                <div className="text-[10px] text-slate-300">Стабильно</div>
               </div>
-              <div className="bg-[#0c0d10] border border-lime-500/25 rounded-md p-2">
-                <div className="text-lg font-bold text-lime-400 tabular-nums">{summaryCounts.lime}</div>
-                <div className="text-[10px] text-zinc-400">Сносно</div>
+              <div className="bg-[#0b1019] border border-lime-400/35 rounded-lg p-2">
+                <div className="text-lg font-bold text-lime-300 tabular-nums">{summaryCounts.lime}</div>
+                <div className="text-[10px] text-slate-300">Сносно</div>
               </div>
-              <div className="bg-[#0c0d10] border border-amber-500/25 rounded-md p-2">
-                <div className="text-lg font-bold text-amber-400 tabular-nums">{summaryCounts.yellow}</div>
-                <div className="text-[10px] text-zinc-400">Условно</div>
+              <div className="bg-[#0b1019] border border-amber-400/35 rounded-lg p-2">
+                <div className="text-lg font-bold text-amber-300 tabular-nums">{summaryCounts.yellow}</div>
+                <div className="text-[10px] text-slate-300">Условно</div>
               </div>
-              <div className="bg-[#0c0d10] border border-rose-500/25 rounded-md p-2">
-                <div className="text-lg font-bold text-rose-400 tabular-nums">{summaryCounts.red}</div>
-                <div className="text-[10px] text-zinc-400">Проблемы</div>
+              <div className="bg-[#0b1019] border border-rose-400/35 rounded-lg p-2">
+                <div className="text-lg font-bold text-rose-300 tabular-nums">{summaryCounts.red}</div>
+                <div className="text-[10px] text-slate-300">Проблемы</div>
               </div>
             </div>
 
             {/* Missing Critical Slots Check */}
             {analysis.missingCoreSlots.length > 0 && (
-              <div className="p-3 rounded-md bg-amber-500/[0.07] border border-amber-500/25 space-y-2">
-                <div className="text-xs font-semibold text-amber-300 flex items-center gap-1.5">
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-400/40 space-y-2">
+                <div className="text-xs font-semibold text-amber-200 flex items-center gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                   Пропущены ключевые слоты ({analysis.missingCoreSlots.length})
                 </div>
                 <div className="space-y-1.5">
                   {analysis.missingCoreSlots.map(slot => (
                     <div key={slot.groupId} className="flex items-center justify-between gap-2 text-[11px]">
-                      <span className="text-zinc-200 truncate">{slot.groupTitle}</span>
+                      <span className="text-slate-100 truncate">{slot.groupTitle}</span>
                       <button
                         onClick={() => {
                           const res = toggleModSmart(selectedIds, slot.leaderId, { strict: true, prefs });
                           setSelectedIds(res.nextIds);
                         }}
-                        className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#181c23] hover:bg-[#232833] border border-[#2d333f] text-amber-200 font-medium"
+                        className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#182233] hover:bg-[#223048] border border-[#344663] text-amber-200 font-medium"
                       >
                         <Plus className="w-3 h-3" />
                         {slot.leaderName}
@@ -1501,21 +1575,21 @@ export function AssemblyBuilderTab({
             {analysis.conflicts.length > 0 || analysis.warnings.length > 0 || summaryCounts.red > 0 ? (
               <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                 {analysis.conflicts.map((c, idx) => (
-                  <div key={idx} className="p-2.5 rounded-md bg-rose-500/[0.07] border border-rose-500/25 text-xs space-y-1">
-                    <div className="font-semibold text-rose-300 flex items-center gap-1.5">
+                  <div key={idx} className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-400/40 text-xs space-y-1">
+                    <div className="font-semibold text-rose-200 flex items-center gap-1.5">
                       <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
                       {c.matchedNames.join(' + ')}
                     </div>
-                    <p className="text-[11px] text-zinc-300">{c.rule.explanation}</p>
+                    <p className="text-[11px] text-slate-200">{c.rule.explanation}</p>
                   </div>
                 ))}
                 {analysis.warnings.map((w, idx) => (
                   <div
                     key={idx}
-                    className={`p-2.5 rounded-md border text-xs flex items-start gap-2 ${
+                    className={`p-2.5 rounded-lg border text-xs flex items-start gap-2 ${
                       w.severity === 'red'
-                        ? 'bg-rose-500/[0.07] border-rose-500/25 text-rose-200'
-                        : 'bg-amber-500/[0.07] border-amber-500/25 text-amber-200'
+                        ? 'bg-rose-500/10 border-rose-400/40 text-rose-100'
+                        : 'bg-amber-500/10 border-amber-400/40 text-amber-100'
                     }`}
                   >
                     <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
@@ -1524,35 +1598,35 @@ export function AssemblyBuilderTab({
                 ))}
                 <button
                   onClick={handleFixIssues}
-                  className="w-full py-2 px-3 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors"
+                  className="w-full py-2 px-3 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-semibold transition-colors"
                 >
                   Исправить конфликты и добрать зависимости
                 </button>
               </div>
             ) : summaryCounts.total > 0 ? (
-              <div className="p-3 rounded-md bg-emerald-500/[0.07] border border-emerald-500/25 text-xs text-emerald-200 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-400/40 text-xs text-emerald-100 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
                 Конфликтов, пустых зависимостей и бесполезных дублей нет.
               </div>
             ) : (
-              <div className="p-3 rounded-md bg-[#0c0d10] border border-[#1e222a] text-xs text-zinc-400">
+              <div className="p-3 rounded-lg bg-[#0b1019] border border-[#243248] text-xs text-slate-300">
                 Нажмите «Пересобрать» или выберите параметры выше для генерации сборки.
               </div>
             )}
 
-            <div className="space-y-2 pt-2 border-t border-[#1e222a]">
+            <div className="space-y-2 pt-2 border-t border-[#243044]">
               <button
                 onClick={handleCopy}
                 disabled={summaryCounts.total === 0}
-                className="w-full py-2 px-3 rounded-md bg-[#1a1d24] hover:bg-[#232832] border border-[#2a2f3a] text-zinc-100 text-xs font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-40 transition-colors"
+                className="w-full py-2 px-3 rounded-lg bg-[#182233] hover:bg-[#223048] border border-[#344663] text-slate-100 text-xs font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-40 transition-colors"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
                 {copied ? 'Список со ссылками скопирован' : 'Копировать моды и ссылки CF'}
               </button>
               <button
                 onClick={() => onSendToChecker(selectedIds)}
                 disabled={summaryCounts.total === 0}
-                className="w-full py-2 px-3 rounded-md bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-40 transition-colors"
+                className="w-full py-2 px-3 rounded-lg bg-sky-400 hover:bg-sky-300 text-slate-950 text-xs font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-40 transition-colors"
               >
                 Открыть списком в Чекере
                 <ArrowRight className="w-3.5 h-3.5" />

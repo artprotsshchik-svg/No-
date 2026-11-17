@@ -201,11 +201,11 @@ export function CheckerTab({ checkedModIds, setCheckedModIds, onOpenDetail }: Ch
   return (
     <div className="space-y-4">
       {/* Top compact bar: presets & summary counts */}
-      <div className="bg-[#111317] border border-[#20242b] rounded-lg p-4 space-y-3">
+      <div className="bg-[#111824] border border-[#2a384e] rounded-xl p-4 space-y-3.5 shadow-lg shadow-black/25">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold text-zinc-100 tracking-tight">Чекер сборки</h2>
-            <p className="text-xs text-zinc-400 mt-0.5">
+            <h2 className="text-base font-semibold text-slate-50 tracking-tight">Чекер сборки</h2>
+            <p className="text-xs text-slate-300 mt-0.5">
               Зелёный — лидер · Салатовый — сносно без конфликтов · Жёлтый — условно / через прослойку · Красный — конфликт или плацебо.
             </p>
           </div>
@@ -213,16 +213,16 @@ export function CheckerTab({ checkedModIds, setCheckedModIds, onOpenDetail }: Ch
             {window.desktopAPI?.isDesktop && (
               <button
                 onClick={handleScanDesktopFolder}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-sky-600/20 hover:bg-sky-600/30 border border-sky-500/35 text-sky-300 transition-colors whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/50 text-sky-100 transition-colors whitespace-nowrap"
               >
-                <FolderOpen className="w-3.5 h-3.5" />
+                <FolderOpen className="w-3.5 h-3.5 text-sky-300" />
                 Папка mods
               </button>
             )}
             {hasAnyIssues && (
               <button
                 onClick={() => setCheckedModIds(smartFixAssembly(checkedModIds))}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-400 hover:bg-emerald-300 text-slate-950 transition-colors whitespace-nowrap"
               >
                 <Wand2 className="w-3.5 h-3.5" />
                 Исправить автоматически
@@ -231,15 +231,15 @@ export function CheckerTab({ checkedModIds, setCheckedModIds, onOpenDetail }: Ch
             <button
               onClick={handleCopyList}
               disabled={rows.length === 0}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[#181b21] hover:bg-[#22262e] border border-[#282d37] text-zinc-200 disabled:opacity-40 transition-colors whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#182233] hover:bg-[#212f46] border border-[#344663] text-slate-100 disabled:opacity-40 transition-colors whitespace-nowrap"
             >
-              {copiedList ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copiedList ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
               {copiedList ? 'Скопировано' : 'Копировать список'}
             </button>
             <button
               onClick={() => setCheckedModIds([])}
               disabled={rows.length === 0}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[#181b21] hover:bg-rose-500/15 border border-[#282d37] hover:border-rose-500/35 text-zinc-300 hover:text-rose-300 disabled:opacity-40 transition-colors whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#182233] hover:bg-rose-500/20 border border-[#344663] hover:border-rose-400/50 text-slate-200 hover:text-rose-200 disabled:opacity-40 transition-colors whitespace-nowrap"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Очистить
@@ -249,16 +249,12 @@ export function CheckerTab({ checkedModIds, setCheckedModIds, onOpenDetail }: Ch
 
         {/* Preset quick-load buttons */}
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] text-zinc-500 mr-1">Пресеты:</span>
+          <span className="text-[11px] font-medium text-slate-400 mr-1">Основные пресеты:</span>
           {MOD_PRESETS.map(preset => (
             <button
               key={preset.id}
               onClick={() => setCheckedModIds([...preset.modIds])}
-              className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors whitespace-nowrap ${
-                preset.id === 'crash-risk'
-                  ? 'bg-rose-500/10 border-rose-500/25 text-rose-300 hover:bg-rose-500/20'
-                  : 'bg-[#0c0d10] border-[#1e222a] text-zinc-300 hover:border-[#303642] hover:text-zinc-100'
-              }`}
+              className="px-2.5 py-1 rounded-md text-xs font-medium border bg-[#0b1019] border-[#253348] text-slate-200 hover:border-sky-400/60 hover:bg-[#162030] hover:text-white transition-colors whitespace-nowrap"
             >
               {preset.name.split('(')[0].trim()}
             </button>
@@ -266,52 +262,54 @@ export function CheckerTab({ checkedModIds, setCheckedModIds, onOpenDetail }: Ch
         </div>
 
         {/* 4-tier filter counters + Add mod search */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-3 border-t border-[#1e222a]">
-          <div className="flex flex-wrap items-center gap-1">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-3 border-t border-[#243044]">
+          <div className="flex flex-wrap items-center gap-1.5">
             <button
               onClick={() => setTierFilter('all')}
-              className={`px-2.5 py-1 rounded text-xs font-medium tabular-nums transition-colors whitespace-nowrap ${
-                tierFilter === 'all' ? 'bg-zinc-100 text-zinc-950' : 'bg-[#0c0d10] border border-[#1e222a] text-zinc-400 hover:text-zinc-200'
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold tabular-nums transition-colors whitespace-nowrap ${
+                tierFilter === 'all'
+                  ? 'bg-sky-400 text-slate-950'
+                  : 'bg-[#0b1019] border border-[#253348] text-slate-300 hover:text-white'
               }`}
             >
               Все ({counts.total})
             </button>
             <button
               onClick={() => setTierFilter('green')}
-              className={`px-2.5 py-1 rounded text-xs font-medium tabular-nums border transition-colors whitespace-nowrap ${
+              className={`px-2.5 py-1 rounded-md text-xs font-medium tabular-nums border transition-colors whitespace-nowrap ${
                 tierFilter === 'green'
-                  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40'
-                  : 'bg-[#0c0d10] border-[#1e222a] text-emerald-400/90 hover:border-emerald-500/30'
+                  ? 'bg-emerald-500/25 text-emerald-100 border-emerald-400/60'
+                  : 'bg-[#0b1019] border-[#253348] text-emerald-300 hover:border-emerald-400/50'
               }`}
             >
               Гарантировано ({counts.green})
             </button>
             <button
               onClick={() => setTierFilter('lime')}
-              className={`px-2.5 py-1 rounded text-xs font-medium tabular-nums border transition-colors whitespace-nowrap ${
+              className={`px-2.5 py-1 rounded-md text-xs font-medium tabular-nums border transition-colors whitespace-nowrap ${
                 tierFilter === 'lime'
-                  ? 'bg-lime-500/15 text-lime-300 border-lime-500/40'
-                  : 'bg-[#0c0d10] border-[#1e222a] text-lime-400/90 hover:border-lime-500/30'
+                  ? 'bg-lime-500/25 text-lime-100 border-lime-400/60'
+                  : 'bg-[#0b1019] border-[#253348] text-lime-300 hover:border-lime-400/50'
               }`}
             >
               Сносно ({counts.lime})
             </button>
             <button
               onClick={() => setTierFilter('yellow')}
-              className={`px-2.5 py-1 rounded text-xs font-medium tabular-nums border transition-colors whitespace-nowrap ${
+              className={`px-2.5 py-1 rounded-md text-xs font-medium tabular-nums border transition-colors whitespace-nowrap ${
                 tierFilter === 'yellow'
-                  ? 'bg-amber-500/15 text-amber-300 border-amber-500/40'
-                  : 'bg-[#0c0d10] border-[#1e222a] text-amber-400/90 hover:border-amber-500/30'
+                  ? 'bg-amber-500/25 text-amber-100 border-amber-400/60'
+                  : 'bg-[#0b1019] border-[#253348] text-amber-300 hover:border-amber-400/50'
               }`}
             >
               Условно ({counts.yellow})
             </button>
             <button
               onClick={() => setTierFilter('red')}
-              className={`px-2.5 py-1 rounded text-xs font-medium tabular-nums border transition-colors whitespace-nowrap ${
+              className={`px-2.5 py-1 rounded-md text-xs font-medium tabular-nums border transition-colors whitespace-nowrap ${
                 tierFilter === 'red'
-                  ? 'bg-rose-500/15 text-rose-300 border-rose-500/40'
-                  : 'bg-[#0c0d10] border-[#1e222a] text-rose-400/90 hover:border-rose-500/30'
+                  ? 'bg-rose-500/25 text-rose-100 border-rose-400/60'
+                  : 'bg-[#0b1019] border-[#253348] text-rose-300 hover:border-rose-400/50'
               }`}
             >
               Конфликт / плацебо ({counts.red})
@@ -319,19 +317,19 @@ export function CheckerTab({ checkedModIds, setCheckedModIds, onOpenDetail }: Ch
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center bg-[#0c0d10] border border-[#1e222a] rounded-md p-0.5 text-xs">
+            <div className="flex items-center bg-[#0b1019] border border-[#253348] rounded-lg p-0.5 text-xs">
               <button
                 onClick={() => setViewMode('tree')}
-                className={`px-2.5 py-1 rounded transition-colors whitespace-nowrap ${
-                  viewMode === 'tree' ? 'bg-[#232832] text-zinc-100 font-medium' : 'text-zinc-400 hover:text-zinc-200'
+                className={`px-2.5 py-1 rounded-md transition-colors whitespace-nowrap ${
+                  viewMode === 'tree' ? 'bg-[#1d2a3f] text-white font-semibold' : 'text-slate-300 hover:text-white'
                 }`}
               >
                 Мод → Аддоны
               </button>
               <button
                 onClick={() => setViewMode('status')}
-                className={`px-2.5 py-1 rounded transition-colors whitespace-nowrap ${
-                  viewMode === 'status' ? 'bg-[#232832] text-zinc-100 font-medium' : 'text-zinc-400 hover:text-zinc-200'
+                className={`px-2.5 py-1 rounded-md transition-colors whitespace-nowrap ${
+                  viewMode === 'status' ? 'bg-[#1d2a3f] text-white font-semibold' : 'text-slate-300 hover:text-white'
                 }`}
               >
                 По статусу
@@ -340,28 +338,28 @@ export function CheckerTab({ checkedModIds, setCheckedModIds, onOpenDetail }: Ch
 
             <button
               onClick={() => setHideIncompatibleSuggestions(v => !v)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors whitespace-nowrap ${
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap ${
                 hideIncompatibleSuggestions
-                  ? 'bg-sky-500/10 border-sky-400/35 text-sky-200'
-                  : 'bg-[#0c0d10] border-[#1e222a] text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-sky-500/20 border-sky-400/50 text-sky-100'
+                  : 'bg-[#0b1019] border-[#253348] text-slate-300 hover:text-white'
               }`}
               title="Скрывать несовместимые с текущим списком, нерабочие на Forge и полностью перекрытые моды"
             >
-              {hideIncompatibleSuggestions ? <EyeOff className="w-3.5 h-3.5 text-sky-400" /> : <Eye className="w-3.5 h-3.5" />}
+              {hideIncompatibleSuggestions ? <EyeOff className="w-3.5 h-3.5 text-sky-300" /> : <Eye className="w-3.5 h-3.5" />}
               {hideIncompatibleSuggestions ? 'Только совм.' : 'Все в поиске'}
             </button>
 
             <div className="relative w-full sm:w-64">
-              <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={addSearch}
                 onChange={e => setAddSearch(e.target.value)}
                 placeholder="Добавить мод по названию..."
-                className="w-full pl-8 pr-3 py-1.5 bg-[#0c0d10] border border-[#20242b] rounded-md text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-sky-400"
+                className="w-full pl-8 pr-3 py-1.5 bg-[#0b1019] border border-[#2a384e] rounded-lg text-xs text-slate-100 placeholder-slate-400 focus:border-sky-400"
               />
               {addSuggestions.length > 0 && (
-                <div className="absolute right-0 left-0 top-full mt-1 z-30 bg-[#15181e] border border-[#2c313b] rounded-lg shadow-2xl divide-y divide-[#20242b] max-h-64 overflow-y-auto">
+                <div className="absolute right-0 left-0 top-full mt-1 z-30 bg-[#141d2c] border border-[#364966] rounded-lg shadow-2xl divide-y divide-[#223044] max-h-64 overflow-y-auto">
                   {addSuggestions.map(s => {
                     const restriction = getModRestrictionBadge(s, checkedSet);
                     return (
@@ -371,16 +369,16 @@ export function CheckerTab({ checkedModIds, setCheckedModIds, onOpenDetail }: Ch
                           setCheckedModIds(prev => (prev.includes(s.id) ? prev : [...prev, s.id]));
                           setAddSearch('');
                         }}
-                        className="w-full px-3 py-2 text-left hover:bg-[#1e222a] flex items-center justify-between gap-2"
+                        className="w-full px-3 py-2 text-left hover:bg-[#1c283c] flex items-center justify-between gap-2"
                       >
                         <div className="min-w-0">
-                          <div className="text-xs font-medium text-zinc-100 truncate">{s.name}</div>
-                          <div className="text-[10px] text-zinc-400 truncate">
+                          <div className="text-xs font-medium text-slate-100 truncate">{s.name}</div>
+                          <div className="text-[10px] text-slate-300 truncate">
                             {restriction ? (
                               <span
                                 className={
                                   restriction.tone === 'red'
-                                    ? 'text-rose-400'
+                                    ? 'text-rose-300'
                                     : restriction.tone === 'amber'
                                       ? 'text-amber-300'
                                       : 'text-sky-300'
@@ -393,7 +391,7 @@ export function CheckerTab({ checkedModIds, setCheckedModIds, onOpenDetail }: Ch
                             )}
                           </div>
                         </div>
-                        <Plus className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <Plus className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
                       </button>
                     );
                   })}
@@ -407,8 +405,8 @@ export function CheckerTab({ checkedModIds, setCheckedModIds, onOpenDetail }: Ch
       {/* Active Conflict / Dependency / Superseded explanation banner */}
       {hasAnyIssues && (
         <div
-          className={`bg-[#111317] border rounded-lg p-4 space-y-2.5 ${
-            analysis.conflicts.length > 0 || redWarnings.length > 0 ? 'border-rose-500/35' : 'border-amber-500/30'
+          className={`bg-[#111824] border rounded-xl p-4 space-y-2.5 ${
+            analysis.conflicts.length > 0 || redWarnings.length > 0 ? 'border-rose-400/50' : 'border-amber-400/45'
           }`}
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -472,31 +470,31 @@ export function CheckerTab({ checkedModIds, setCheckedModIds, onOpenDetail }: Ch
       )}
 
       {/* Compact Vertical List */}
-      <div className="bg-[#111317] border border-[#20242b] rounded-lg overflow-hidden">
+      <div className="bg-[#111824] border border-[#2a384e] rounded-xl overflow-hidden shadow-lg shadow-black/25">
         {filteredRows.length === 0 ? (
-          <div className="p-8 text-center text-xs text-zinc-500">
+          <div className="p-8 text-center text-xs text-slate-400">
             Список пуст. Загрузите готовый пресет выше или добавьте моды через поиск.
           </div>
         ) : (
-          <div className="divide-y divide-[#1b1f26]">
+          <div className="divide-y divide-[#202c3e]">
             {displayRows.map(({ row: { mod, tier, label, reason, viaBridge }, isChild, relationLabel, rootIndex, childCount }) => {
               const updatedLabel = getModUpdatedLabel(mod);
               const rowAccent =
                 tier === 'green'
-                  ? 'hover:bg-white/[0.02]'
+                  ? 'hover:bg-white/[0.03]'
                   : tier === 'lime'
-                    ? 'bg-lime-500/[0.02] hover:bg-lime-500/[0.04]'
+                    ? 'bg-lime-500/[0.03] hover:bg-lime-500/[0.06]'
                     : tier === 'yellow'
-                      ? 'bg-amber-500/[0.02] hover:bg-amber-500/[0.04]'
-                      : 'bg-rose-500/[0.04] hover:bg-rose-500/[0.07]';
+                      ? 'bg-amber-500/[0.03] hover:bg-amber-500/[0.06]'
+                      : 'bg-rose-500/[0.05] hover:bg-rose-500/[0.08]';
               const badgeCls =
                 tier === 'green'
-                  ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25'
+                  ? 'bg-emerald-500/15 text-emerald-200 border-emerald-400/40'
                   : tier === 'lime'
-                    ? 'bg-lime-500/10 text-lime-300 border-lime-500/30'
+                    ? 'bg-lime-500/15 text-lime-200 border-lime-400/40'
                     : tier === 'yellow'
-                      ? 'bg-amber-500/10 text-amber-300 border-amber-500/25'
-                      : 'bg-rose-500/15 text-rose-300 border-rose-500/35';
+                      ? 'bg-amber-500/15 text-amber-200 border-amber-400/40'
+                      : 'bg-rose-500/20 text-rose-200 border-rose-400/50';
               const Icon =
                 tier === 'green' || tier === 'lime'
                   ? CheckCircle2
@@ -508,22 +506,22 @@ export function CheckerTab({ checkedModIds, setCheckedModIds, onOpenDetail }: Ch
                 <div
                   key={mod.id}
                   className={`py-2.5 flex items-center justify-between gap-3 transition-colors ${rowAccent} ${
-                    isChild ? 'pl-9 pr-4 bg-[#0e1014]/70 border-l-2 border-l-sky-500/30' : 'px-4'
+                    isChild ? 'pl-10 pr-4 bg-[#0d1420]' : 'px-4'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     {!isChild && rootIndex !== undefined && (
-                      <span className="text-[11px] font-mono text-zinc-500 w-5 text-right shrink-0 tabular-nums">
+                      <span className="text-[11px] font-mono text-slate-400 w-5 text-right shrink-0 tabular-nums">
                         {rootIndex}.
                       </span>
                     )}
                     {isChild && (
-                      <span className="text-xs font-mono text-sky-400/75 w-5 text-right shrink-0">
+                      <span className="text-xs font-mono text-sky-400 w-5 text-right shrink-0">
                         ↳
                       </span>
                     )}
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border shrink-0 w-40 justify-center ${badgeCls}`}
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border shrink-0 w-40 justify-center ${badgeCls}`}
                     >
                       <Icon className="w-3 h-3 shrink-0" />
                       {label}
@@ -533,36 +531,36 @@ export function CheckerTab({ checkedModIds, setCheckedModIds, onOpenDetail }: Ch
                       <div className="flex flex-wrap items-baseline gap-2">
                         <button
                           onClick={() => onOpenDetail(mod)}
-                          className="text-sm font-medium text-zinc-100 hover:text-sky-300 text-left truncate"
+                          className="text-sm font-semibold text-slate-50 hover:text-sky-300 text-left truncate"
                         >
                           {mod.name}
                         </button>
                         {isChild && relationLabel && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/10 border border-sky-500/25 text-sky-300">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/15 border border-sky-400/35 text-sky-200 font-medium">
                             {relationLabel}
                           </span>
                         )}
                         {!isChild && childCount !== undefined && childCount > 0 && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#181b21] border border-[#252a33] text-zinc-400">
+                          <span className="text-[11px] text-slate-400 font-medium">
                             +{childCount} аддонов
                           </span>
                         )}
-                        <span className="text-[11px] text-zinc-500">{mod.platform}</span>
+                        <span className="text-[11px] text-slate-400">{mod.platform}</span>
                         {updatedLabel && (
-                          <span className="text-[11px] text-zinc-500">· обн. {updatedLabel}</span>
+                          <span className="text-[11px] text-slate-400 font-mono">· обн. {updatedLabel}</span>
                         )}
                         {viaBridge && (
-                          <span className="text-[11px] text-sky-400">{viaBridge}</span>
+                          <span className="text-[11px] text-sky-300 font-medium">{viaBridge}</span>
                         )}
                       </div>
                       {tier !== 'green' && (
                         <p
                           className={`text-xs truncate mt-0.5 ${
                             tier === 'red'
-                              ? 'text-rose-300/90'
+                              ? 'text-rose-200'
                               : tier === 'lime'
-                                ? 'text-lime-300/80'
-                                : 'text-amber-300/85'
+                                ? 'text-lime-200/90'
+                                : 'text-amber-200/90'
                           }`}
                         >
                           {reason}
@@ -576,7 +574,7 @@ export function CheckerTab({ checkedModIds, setCheckedModIds, onOpenDetail }: Ch
                       href={mod.curseforgeUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium bg-[#181b21] hover:bg-[#f16436] border border-[#252a33] hover:border-[#f16436] text-zinc-300 hover:text-white transition-colors"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium bg-[#182233] hover:bg-[#f16436] border border-[#344663] hover:border-[#f16436] text-slate-200 hover:text-white transition-colors"
                       title="Открыть на CurseForge"
                     >
                       CurseForge
@@ -584,7 +582,7 @@ export function CheckerTab({ checkedModIds, setCheckedModIds, onOpenDetail }: Ch
                     </a>
                     <button
                       onClick={() => setCheckedModIds(prev => prev.filter(id => id !== mod.id))}
-                      className="p-1.5 rounded text-zinc-500 hover:text-rose-300 hover:bg-rose-500/10 transition-colors"
+                      className="p-1.5 rounded-md text-slate-400 hover:text-rose-200 hover:bg-rose-500/20 transition-colors"
                       title="Убрать из списка"
                     >
                       <X className="w-4 h-4" />

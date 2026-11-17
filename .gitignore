@@ -7,5 +7,7 @@ coverage/
 .env*
 !.env.example
 release/
-dist-electron/
+desktop/webui/*
+!desktop/webui/.gitkeep
+desktop/*.exe
 .playwright-cli/

@@ -127,16 +127,16 @@ export function ModDetailModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-3xl max-h-[88vh] overflow-y-auto bg-[#111317] border border-[#262b34] rounded-xl shadow-2xl"
+        className="w-full max-w-3xl max-h-[88vh] overflow-y-auto bg-[#111824] border border-[#344663] rounded-xl shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
-        <div className="sticky top-0 z-10 bg-[#111317]/95 backdrop-blur-md px-6 py-4 border-b border-[#20242b] flex items-start justify-between gap-4">
+        <div className="sticky top-0 z-10 bg-[#111824]/95 backdrop-blur-md px-6 py-4 border-b border-[#26344b] flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 text-xs mb-1.5">
-              <span className={`px-2 py-0.5 rounded font-medium border ${tierStyle.badge}`}>
+              <span className={`px-2 py-0.5 rounded font-semibold border ${tierStyle.badge}`}>
                 {mod.statusLabel}
               </span>
-              <span className="text-zinc-400">
+              <span className="text-slate-300">
                 {mod.platform}
                 {mod.isGroupLeader ? ' · Лидер группы' : mod.isGroupAddon ? ' · Аддон' : ''}
                 {(() => {
@@ -145,15 +145,15 @@ export function ModDetailModal({
                 })()}
               </span>
             </div>
-            <h2 className="text-xl font-bold text-zinc-100 leading-tight break-words tracking-tight">{mod.name}</h2>
-            <p className="text-xs text-zinc-400 mt-0.5">
+            <h2 className="text-xl font-bold text-slate-50 leading-tight break-words tracking-tight">{mod.name}</h2>
+            <p className="text-xs text-slate-300 mt-0.5">
               {mod.category}
               {mod.groupTitle ? ` · ${mod.groupTitle}` : ''}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-[#1c2028] transition-colors shrink-0"
+            className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-[#1e2a3f] transition-colors shrink-0"
             aria-label="Закрыть"
           >
             <X className="w-5 h-5" />
@@ -166,7 +166,7 @@ export function ModDetailModal({
               href={mod.curseforgeUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-[#f16436] hover:bg-[#d95327] text-white text-xs font-semibold transition-colors whitespace-nowrap"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#f16436] hover:bg-[#e0572b] text-white text-xs font-semibold transition-colors whitespace-nowrap"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               Открыть на CurseForge
@@ -174,10 +174,10 @@ export function ModDetailModal({
 
             <button
               onClick={() => onToggleCheckMod(mod.id)}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold border transition-colors whitespace-nowrap ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap ${
                 isSelectedInChecker
-                  ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/20'
-                  : 'bg-[#181b21] border-[#292e39] text-zinc-200 hover:bg-[#21252e]'
+                  ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-100 hover:bg-emerald-500/25'
+                  : 'bg-[#182233] border-[#344663] text-slate-100 hover:bg-[#212f46]'
               }`}
             >
               {isSelectedInChecker ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
@@ -187,10 +187,10 @@ export function ModDetailModal({
             {onAnchorForBuilder && baseTier !== 'red' && !mod.coveredBy && (
               <button
                 onClick={() => onAnchorForBuilder(mod)}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold border transition-colors whitespace-nowrap ${
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap ${
                   anchorModId === mod.id
-                    ? 'bg-sky-500/20 border-sky-400/50 text-sky-200'
-                    : 'bg-zinc-100 hover:bg-white border-zinc-100 text-zinc-950'
+                    ? 'bg-sky-500/25 border-sky-400/60 text-sky-100'
+                    : 'bg-sky-400 hover:bg-sky-300 border-sky-400 text-slate-950'
                 }`}
               >
                 <Crosshair className="w-3.5 h-3.5" />
@@ -201,7 +201,7 @@ export function ModDetailModal({
             {groupInfo?.leader && groupInfo.leader.id !== mod.id && (
               <button
                 onClick={() => onSelectMod(groupInfo.leader!)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold bg-[#181b21] border border-[#292e39] text-zinc-200 hover:bg-[#21252e] transition-colors whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-[#182233] border border-[#344663] text-slate-100 hover:bg-[#212f46] transition-colors whitespace-nowrap"
               >
                 К лидеру: {groupInfo.leader.name}
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -209,8 +209,8 @@ export function ModDetailModal({
             )}
           </div>
 
-          <div className="bg-[#0c0d10] border border-[#1e222a] rounded-lg p-4 space-y-3">
-            <p className="text-sm text-zinc-200 leading-relaxed">{mod.description}</p>
+          <div className="bg-[#0b1019] border border-[#243248] rounded-xl p-4 space-y-3">
+            <p className="text-sm text-slate-100 leading-relaxed">{mod.description}</p>
 
             {mod.coveredBy && (
               <div className="flex items-start gap-2.5 p-3 rounded-md bg-amber-500/[0.07] border border-amber-500/25 text-xs text-amber-200">
@@ -286,13 +286,13 @@ export function ModDetailModal({
           </div>
 
           {dualPairMods && dualPairMods.forgeMod && dualPairMods.fabricMod && (
-            <div className="bg-[#0c0d10] border border-[#242a34] rounded-lg p-4 space-y-3">
+            <div className="bg-[#0b1019] border border-[#2a384e] rounded-xl p-4 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-slate-50 flex items-center gap-2">
                   <ArrowLeftRight className="w-4 h-4 text-sky-400" />
                   Выбор реализации: {dualPairMods.pair.title}
                 </h3>
-                <span className="text-[11px] text-zinc-400">
+                <span className="text-[11px] text-slate-300">
                   {dualPairMods.pair.switchableOnForge
                     ? 'Оба варианта работают на Forge 1.20.1'
                     : 'На Forge работает только нативный порт'}
@@ -320,38 +320,38 @@ export function ModDetailModal({
                   const borderCls =
                     item.tone === 'emerald'
                       ? isCurrent
-                        ? 'border-emerald-500/50 bg-emerald-500/[0.08]'
-                        : 'border-[#20242b] bg-[#111317]'
+                        ? 'border-emerald-400/60 bg-emerald-500/10'
+                        : 'border-[#273549] bg-[#111824]'
                       : item.tone === 'sky'
                         ? isCurrent
-                          ? 'border-sky-400/50 bg-sky-500/[0.08]'
-                          : 'border-[#20242b] bg-[#111317]'
-                        : 'border-rose-500/30 bg-rose-500/[0.05]';
+                          ? 'border-sky-400/60 bg-sky-500/10'
+                          : 'border-[#273549] bg-[#111824]'
+                        : 'border-rose-400/40 bg-rose-500/10';
                   return (
-                    <div key={item.target.id} className={`rounded-md border p-3 flex flex-col justify-between gap-2.5 ${borderCls}`}>
+                    <div key={item.target.id} className={`rounded-lg border p-3 flex flex-col justify-between gap-2.5 ${borderCls}`}>
                       <div className="space-y-1">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] font-medium text-zinc-400">
+                          <span className="text-[11px] font-medium text-slate-300">
                             {item.role}
                           </span>
                           <a
                             href={item.target.curseforgeUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[11px] text-zinc-400 hover:text-[#f16436] inline-flex items-center gap-1"
+                            className="text-[11px] text-slate-300 hover:text-[#f16436] inline-flex items-center gap-1"
                           >
                             CF <ExternalLink className="w-3 h-3" />
                           </a>
                         </div>
-                        <div className="text-xs font-semibold text-zinc-100">{item.target.name}</div>
-                        <p className="text-[11px] text-zinc-400 leading-snug">{item.summary}</p>
+                        <div className="text-xs font-semibold text-slate-50">{item.target.name}</div>
+                        <p className="text-[11px] text-slate-300 leading-snug">{item.summary}</p>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-1.5">
                         {!isCurrent && (
                           <button
                             onClick={() => onSelectMod(item.target)}
-                            className="px-2.5 py-1 rounded bg-[#1b1f27] hover:bg-[#252a34] border border-[#2b313d] text-[11px] text-zinc-200 font-medium"
+                            className="px-2.5 py-1 rounded-md bg-[#182233] hover:bg-[#223048] border border-[#344663] text-[11px] text-slate-100 font-medium"
                           >
                             Открыть
                           </button>
@@ -359,10 +359,10 @@ export function ModDetailModal({
                         {onChooseVariantInBuilder && item.canPick && (
                           <button
                             onClick={() => onChooseVariantInBuilder(item.target)}
-                            className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
+                            className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors ${
                               item.tone === 'emerald'
-                                ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                                : 'bg-zinc-100 hover:bg-white text-zinc-950'
+                                ? 'bg-emerald-400 hover:bg-emerald-300 text-slate-950'
+                                : 'bg-sky-400 hover:bg-sky-300 text-slate-950'
                             }`}
                           >
                             Выбрать в Клипании
@@ -379,31 +379,31 @@ export function ModDetailModal({
           {groupInfo && groupInfo.addons.length > 0 && (
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-zinc-100">
+                <h3 className="text-sm font-semibold text-slate-50">
                   Совместимые аддоны и дополнения ({groupInfo.addons.length})
                 </h3>
-                <span className="text-[11px] text-zinc-500">Дополняют лидера, не заменяя его</span>
+                <span className="text-[11px] text-slate-400">Дополняют лидера, не заменяя его</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {groupInfo.addons.map(addon => {
                   const addonTier = getBaseHealthTier(addon);
                   const statusTone =
                     addonTier === 'red'
-                      ? 'text-rose-400'
+                      ? 'text-rose-300'
                       : addonTier === 'green'
-                        ? 'text-emerald-400'
+                        ? 'text-emerald-300'
                         : addonTier === 'lime'
-                          ? 'text-lime-400'
-                          : 'text-amber-400';
+                          ? 'text-lime-300'
+                          : 'text-amber-300';
                   return (
                     <div
                       key={addon.id}
                       onClick={() => onSelectMod(addon)}
-                      className="p-3 rounded-md bg-[#0c0d10] border border-[#1e222a] hover:border-[#323844] cursor-pointer transition-colors flex flex-col justify-between gap-2"
+                      className="p-3 rounded-lg bg-[#0b1019] border border-[#243248] hover:border-[#42587a] cursor-pointer transition-colors flex flex-col justify-between gap-2"
                     >
                       <div>
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-semibold text-zinc-100 truncate">
+                          <span className="text-xs font-semibold text-slate-50 truncate">
                             {addon.name}
                           </span>
                           <a
@@ -411,15 +411,15 @@ export function ModDetailModal({
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={e => e.stopPropagation()}
-                            className="text-zinc-500 hover:text-[#f16436] p-1 rounded shrink-0"
+                            className="text-slate-400 hover:text-[#f16436] p-1 rounded shrink-0"
                             title="Открыть на CurseForge"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>
                         </div>
-                        <p className="text-[11px] text-zinc-400 mt-1 line-clamp-2">{addon.description}</p>
+                        <p className="text-[11px] text-slate-300 mt-1 line-clamp-2">{addon.description}</p>
                       </div>
-                      <div className="flex items-center justify-between text-[10px] text-zinc-500">
+                      <div className="flex items-center justify-between text-[10px] text-slate-400">
                         <span>{addon.platform}</span>
                         <span className={statusTone}>{addon.statusLabel}</span>
                       </div>
@@ -433,52 +433,52 @@ export function ModDetailModal({
           {groupInfo && groupInfo.removedAnalogs.length > 0 && (
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-zinc-400" />
+                <h3 className="text-sm font-semibold text-slate-50 flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-slate-300" />
                   Скрытые аналоги в группе ({groupInfo.removedAnalogs.length})
                 </h3>
-                <span className="text-[11px] text-zinc-500">
+                <span className="text-[11px] text-slate-400">
                   {groupInfo.group.exclusive ? 'Конфликтуют или слабее лидера' : 'Дополнительные варианты'}
                 </span>
               </div>
               {groupInfo.group.conflictReason && (
-                <p className="text-xs text-zinc-400 bg-[#0c0d10] border border-[#1e222a] rounded-md px-3 py-2">
+                <p className="text-xs text-slate-300 bg-[#0b1019] border border-[#243248] rounded-lg px-3 py-2">
                   {groupInfo.group.conflictReason}
                 </p>
               )}
-              <div className="divide-y divide-[#1b1f26] border border-[#20242b] rounded-md overflow-hidden bg-[#0c0d10]">
+              <div className="divide-y divide-[#202c3e] border border-[#273549] rounded-lg overflow-hidden bg-[#0b1019]">
                 {groupInfo.removedAnalogs.map(alt => {
                   const altTier = getBaseHealthTier(alt);
                   const pillCls =
                     altTier === 'red'
-                      ? 'bg-rose-500/10 text-rose-300 border-rose-500/25'
+                      ? 'bg-rose-500/15 text-rose-200 border-rose-400/35'
                       : altTier === 'green'
-                        ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25'
+                        ? 'bg-emerald-500/15 text-emerald-200 border-emerald-400/35'
                         : altTier === 'lime'
-                          ? 'bg-lime-500/10 text-lime-300 border-lime-500/25'
-                          : 'bg-amber-500/10 text-amber-300 border-amber-500/25';
+                          ? 'bg-lime-500/15 text-lime-200 border-lime-400/35'
+                          : 'bg-amber-500/15 text-amber-200 border-amber-400/35';
                   return (
                     <div
                       key={alt.id}
                       onClick={() => onSelectMod(alt)}
-                      className="px-3.5 py-2.5 hover:bg-[#14171d] cursor-pointer transition-colors flex items-start justify-between gap-3"
+                      className="px-3.5 py-2.5 hover:bg-[#151e2e] cursor-pointer transition-colors flex items-start justify-between gap-3"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-xs font-semibold text-zinc-100">{alt.name}</span>
+                          <span className="text-xs font-semibold text-slate-50">{alt.name}</span>
                           <span className={`text-[10px] px-1.5 py-0.2 rounded border font-medium ${pillCls}`}>
                             {alt.statusLabel}
                           </span>
                           {alt.coveredBy && (
-                            <span className="text-[11px] text-zinc-400">
+                            <span className="text-[11px] text-slate-300">
                               Встроено в {alt.coveredBy}
                             </span>
                           )}
                         </div>
-                        <p className="text-[11px] text-zinc-400 mt-1 leading-snug">{alt.description}</p>
+                        <p className="text-[11px] text-slate-300 mt-1 leading-snug">{alt.description}</p>
                         {(alt.bestAlternative || alt.warning) && (
-                          <p className="text-[11px] text-zinc-300 mt-1">
-                            <span className="text-zinc-500">Сравнение:</span>{' '}
+                          <p className="text-[11px] text-slate-200 mt-1">
+                            <span className="text-slate-400">Сравнение:</span>{' '}
                             {alt.bestAlternative || alt.warning}
                           </p>
                         )}
@@ -488,7 +488,7 @@ export function ModDetailModal({
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={e => e.stopPropagation()}
-                        className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded bg-[#181b21] hover:bg-[#f16436] border border-[#252a33] text-zinc-300 hover:text-white text-[11px] transition-colors"
+                        className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#182233] hover:bg-[#f16436] border border-[#344663] text-slate-200 hover:text-white text-[11px] transition-colors"
                       >
                         CF
                         <ExternalLink className="w-3 h-3" />
@@ -502,27 +502,27 @@ export function ModDetailModal({
 
           {builtInCoveredMods.length > 0 && (
             <div className="space-y-2.5">
-              <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
-                <PackageCheck className="w-4 h-4 text-emerald-400" />
+              <h3 className="text-sm font-semibold text-slate-50 flex items-center gap-2">
+                <PackageCheck className="w-4 h-4 text-emerald-300" />
                 Моды, уже включённые в {mod.name} ({builtInCoveredMods.length})
               </h3>
-              <div className="divide-y divide-[#1b1f26] border border-[#20242b] rounded-md overflow-hidden bg-[#0c0d10]">
+              <div className="divide-y divide-[#202c3e] border border-[#273549] rounded-lg overflow-hidden bg-[#0b1019]">
                 {builtInCoveredMods.map(sub => (
                   <div
                     key={sub.id}
                     onClick={() => onSelectMod(sub)}
-                    className="px-3.5 py-2 hover:bg-[#14171d] cursor-pointer flex items-center justify-between gap-3"
+                    className="px-3.5 py-2 hover:bg-[#151e2e] cursor-pointer flex items-center justify-between gap-3"
                   >
                     <div className="min-w-0">
-                      <div className="text-xs font-medium text-zinc-200">{sub.name}</div>
-                      <div className="text-[11px] text-zinc-400 truncate">{sub.description}</div>
+                      <div className="text-xs font-medium text-slate-100">{sub.name}</div>
+                      <div className="text-[11px] text-slate-300 truncate">{sub.description}</div>
                     </div>
                     <a
                       href={sub.curseforgeUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={e => e.stopPropagation()}
-                      className="shrink-0 text-zinc-400 hover:text-[#f16436] p-1"
+                      className="shrink-0 text-slate-300 hover:text-[#f16436] p-1"
                       title="CurseForge"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />

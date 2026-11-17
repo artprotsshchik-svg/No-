@@ -23,11 +23,14 @@ export interface DesktopAPI {
   checkAppUpdate: () => Promise<{ ok: boolean; version?: string; message?: string }>;
   installAppUpdate: () => Promise<void>;
   scanModsFolder: () => Promise<ScanModsFolderResult>;
+  loadAppState?: () => Promise<Record<string, unknown> | null>;
+  saveAppState?: (state: Record<string, unknown>) => Promise<boolean>;
   onAppUpdateStatus: (callback: (payload: DesktopUpdateStatus) => void) => () => void;
 }
 
 declare global {
   interface Window {
+    __GO_DESKTOP_API__?: boolean;
     desktopAPI?: DesktopAPI;
   }
 }

@@ -45,12 +45,11 @@ test('all mods have valid CurseForge URLs, non-empty fields, and 100% MOD_GROUPS
   }
 });
 
-test('all safe presets have zero conflicts, zero red warnings, and zero yellow warnings', () => {
-  const safePresets = MOD_PRESETS.filter(p => p.id !== 'crash-risk');
-  assert.ok(safePresets.length >= 13, `Expected >=13 safe presets, got ${safePresets.length}`);
-  assert.ok(safePresets.some(p => p.id === 'emi-tmrv-max'));
+test('all core Nvidium and Alloyium presets have zero conflicts, zero red warnings, and zero yellow warnings', () => {
+  assert.equal(MOD_PRESETS.length, 7, `Expected 7 core Nvidium/Alloyium presets, got ${MOD_PRESETS.length}`);
+  assert.ok(MOD_PRESETS.every(p => p.modIds.includes('nvidium') || p.modIds.includes('alloyium')));
 
-  for (const preset of safePresets) {
+  for (const preset of MOD_PRESETS) {
     const analysis = analyzeSelection(preset.modIds);
     assert.equal(
       analysis.conflicts.length,
@@ -74,16 +73,29 @@ test('all safe presets have zero conflicts, zero red warnings, and zero yellow w
       assert.notEqual(
         tier.tier,
         'red',
-        `Safe preset "${preset.id}" contains RED mod "${mod.name}" (${tier.reason})`
+        `Core preset "${preset.id}" contains RED mod "${mod.name}" (${tier.reason})`
       );
     }
   }
 });
 
-test('crash-risk preset triggers expected conflicts and red warnings', () => {
-  const crashPreset = MOD_PRESETS.find(p => p.id === 'crash-risk');
-  assert.ok(crashPreset);
-  const analysis = analyzeSelection(crashPreset.modIds);
+test('incompatible mod mix triggers expected conflicts and red warnings', () => {
+  const analysis = analyzeSelection([
+    'optifine',
+    'embeddium',
+    'emberbium',
+    'rubidium',
+    'solix',
+    'starlight-with-create-fix',
+    'radium-reforged',
+    'radium-re-reforged',
+    'nvidium',
+    'oculus',
+    'simply-server-ram-optimizer-cleaner',
+    'memguard',
+    'tt20-tps-fixer',
+    'tickaccelerate',
+  ]);
   assert.ok(analysis.conflicts.length >= 5, `Expected >=5 conflicts, got ${analysis.conflicts.length}`);
   assert.ok(analysis.conflictingIdSet.has('optifine'));
   assert.ok(analysis.conflictingIdSet.has('nvidium'));
@@ -170,12 +182,12 @@ test('Alloyium is an addon of Embeddium in core-renderer group', () => {
   assert.ok(group.removedAnalogs.some(r => r.id === 'xenon'));
 });
 
-test('buildSmartAssembly adapts to gpu, server mode, pack size, shaders, create, and sinytra with zero conflicts', () => {
+test('buildSmartAssembly adapts to gpu, server mode, goal, shaders, create, and sinytra with zero conflicts', () => {
   const profiles: AssemblyPreferences[] = [
-    { gpu: 'nvidia', mode: 'singleplayer', packSize: 'light', useShaders: false, useCreate: false, allowSinytra: true, goal: 'balanced' },
-    { gpu: 'nvidia', mode: 'server', packSize: 'heavy', useShaders: true, useCreate: true, allowSinytra: true, goal: 'max-safe' },
-    { gpu: 'amd-intel', mode: 'hybrid-server', packSize: 'heavy', useShaders: false, useCreate: true, allowSinytra: false, goal: 'max-safe' },
-    { gpu: 'integrated', mode: 'singleplayer', packSize: 'light', useShaders: false, useCreate: false, allowSinytra: false, goal: 'potato' },
+    { gpu: 'nvidia', mode: 'singleplayer', useShaders: false, useCreate: false, allowSinytra: true, goal: 'balanced' },
+    { gpu: 'nvidia', mode: 'server', useShaders: true, useCreate: true, allowSinytra: true, goal: 'max-safe' },
+    { gpu: 'amd-intel', mode: 'hybrid-server', useShaders: false, useCreate: true, allowSinytra: false, goal: 'max-safe' },
+    { gpu: 'integrated', mode: 'singleplayer', useShaders: false, useCreate: false, allowSinytra: false, goal: 'potato' },
   ];
 
   for (const prefs of profiles) {
@@ -205,11 +217,11 @@ test('buildSmartAssembly adapts to gpu, server mode, pack size, shaders, create,
     } else {
       assert.ok(modIds.includes('krypton-reno'));
     }
-    if (prefs.packSize === 'heavy') {
+    if (prefs.goal === 'max-safe') {
       assert.ok(modIds.includes('fastsuite'));
       assert.ok(modIds.includes('structure-dfu-cache'));
     }
-    if (prefs.packSize === 'light' && prefs.goal === 'balanced') {
+    if (prefs.goal === 'balanced') {
       assert.ok(!modIds.includes('fastsuite'));
     }
   }
@@ -318,7 +330,6 @@ test('buildSmartAssembly supports focusModId anchoring across conflicting pipeli
   const basePrefs: AssemblyPreferences = {
     gpu: 'nvidia',
     mode: 'singleplayer',
-    packSize: 'light',
     useShaders: false,
     useCreate: false,
     allowSinytra: true,
@@ -385,7 +396,6 @@ test('DUAL_PORT_PAIRS resolve to valid mods and portStrategy switches Forge vs F
   const serverHeavyBase: AssemblyPreferences = {
     gpu: 'nvidia',
     mode: 'server',
-    packSize: 'heavy',
     useShaders: false,
     useCreate: false,
     allowSinytra: true,
@@ -464,7 +474,6 @@ test('isModIncompatibleWithSelection hides conflicting, transitive-conflicting, 
     isModIncompatibleWithSelection(byId.get('c2me-concurrent-chunk-management-engine')!, new Set(['embeddium']), {
       gpu: 'nvidia',
       mode: 'singleplayer',
-      packSize: 'light',
       useShaders: false,
       useCreate: false,
       allowSinytra: false,
@@ -490,7 +499,6 @@ test('EMI / JEI recipe viewer modes and bridge-aware visibility behave accuratel
   const basePrefs: AssemblyPreferences = {
     gpu: 'nvidia',
     mode: 'singleplayer',
-    packSize: 'heavy',
     useShaders: false,
     useCreate: false,
     allowSinytra: true,
@@ -561,7 +569,6 @@ test('supersededBy and supersededWhenAll hide strictly overlapped mods and warn/
   const emiPrefs: AssemblyPreferences = {
     gpu: 'nvidia',
     mode: 'singleplayer',
-    packSize: 'heavy',
     useShaders: false,
     useCreate: false,
     allowSinytra: true,
@@ -863,6 +870,49 @@ test('matchJarFilenamesToMods resolves Windows .jar filenames including dual-por
   assert.ok(matchedIds.includes('c2me-concurrent-chunk-management-engine'));
   assert.deepEqual(unmatchedJars, ['create-1.20.1-0.5.1.j.jar']);
 });
+
+test('persistence helpers sanitize saved tabs, dates, mod IDs, and builder preferences across restarts', async () => {
+  const { parsePersistedState, formatRuDate } = await import('./persistence.ts');
+
+  const dateStr = formatRuDate(new Date('2026-11-18T10:00:00Z'));
+  assert.match(dateStr, /^\d{2}\.\d{2}\.2026$/);
+
+  const parsed = parsePersistedState({
+    schemaVersion: 2,
+    dbUpdatedAt: '16.11.2026',
+    lastSavedDate: '18.11.2026',
+    activeTab: 'assembler',
+    checkedModIds: ['embeddium', 'non-existent-mod', 'alloyium', 'embeddium'],
+    builderModIds: ['emberbium', 'nvidium'],
+    builderPrefs: {
+      gpu: 'amd-intel',
+      mode: 'server',
+      goal: 'max-safe',
+      useShaders: true,
+      useCreate: false,
+      allowSinytra: false,
+      portStrategy: 'native-forge',
+      recipeViewer: 'emi',
+      focusModId: 'alloyium',
+      packSize: 'heavy',
+    },
+    focusModId: 'alloyium',
+  });
+
+  assert.ok(parsed);
+  assert.equal(parsed.dbUpdatedAt, '16.11.2026');
+  assert.equal(parsed.lastSavedDate, '18.11.2026');
+  assert.equal(parsed.activeTab, 'assembler');
+  assert.deepEqual(parsed.checkedModIds, ['embeddium', 'alloyium']);
+  assert.deepEqual(parsed.builderModIds, ['emberbium', 'nvidium']);
+  assert.equal(parsed.builderPrefs?.recipeViewer, 'emi');
+  assert.equal(parsed.builderPrefs?.gpu, 'amd-intel');
+  assert.equal('packSize' in (parsed.builderPrefs || {}), false);
+
+  const invalidTab = parsePersistedState({ activeTab: 'file' });
+  assert.equal(invalidTab?.activeTab, undefined);
+});
+
 
 
 
