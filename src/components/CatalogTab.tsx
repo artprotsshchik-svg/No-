@@ -5,6 +5,7 @@ import {
   type ModItem,
 } from '../data/modsData.ts';
 import {
+  evaluateModImpactInPack,
   getBaseHealthTier,
   getGroupMembersByRole,
   getModEffectivenessScore,
@@ -47,27 +48,27 @@ export function getHealthBadge(mod: ModItem) {
   const tier = getBaseHealthTier(mod);
   if (tier === 'red') {
     return {
-      cls: 'bg-rose-500/15 text-rose-200 border-rose-400/40',
+      dotCls: 'bg-rose-400',
       textCls: 'text-rose-300',
       text: mod.statusLabel,
     };
   }
   if (tier === 'green') {
     return {
-      cls: 'bg-emerald-500/15 text-emerald-200 border-emerald-400/40',
+      dotCls: 'bg-emerald-400',
       textCls: 'text-emerald-300',
       text: mod.statusLabel,
     };
   }
   if (tier === 'lime') {
     return {
-      cls: 'bg-lime-500/15 text-lime-200 border-lime-400/40',
+      dotCls: 'bg-lime-400',
       textCls: 'text-lime-300',
       text: mod.statusLabel,
     };
   }
   return {
-    cls: 'bg-amber-500/15 text-amber-200 border-amber-400/40',
+    dotCls: 'bg-amber-400',
     textCls: 'text-amber-300',
     text: mod.statusLabel,
   };
@@ -170,7 +171,7 @@ export function CatalogTab({
 
   return (
     <div className="space-y-4">
-      <div className="bg-[#111824] border border-[#2a384e] rounded-xl p-4 space-y-3 shadow-sm">
+      <div className="bg-[#121620] border border-[#1f2534] rounded-xl p-4 space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5">
           <div className="md:col-span-5 relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -178,8 +179,9 @@ export function CatalogTab({
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Поиск по названию, описанию или аналогу (Alloyium, Nvidium)..."
-              className="w-full pl-9 pr-3 py-2 bg-[#0b1019] border border-[#263244] rounded-lg text-xs text-slate-100 placeholder-slate-400 focus:border-sky-400 transition-colors"
+              placeholder="Поиск по названию, описанию или аналогу..."
+              aria-label="Поиск модов в каталоге"
+              className="w-full pl-9 pr-3 py-2 bg-[#0a0c12] border border-[#1f2534] rounded-lg text-xs text-slate-100 placeholder-slate-500 focus:border-sky-400 transition-colors"
             />
           </div>
 
@@ -188,7 +190,7 @@ export function CatalogTab({
               aria-label="Категория модов"
               value={selectedCategory}
               onChange={e => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 bg-[#0b1019] border border-[#263244] rounded-lg text-xs text-slate-100 focus:border-sky-400 transition-colors"
+              className="w-full px-3 py-2 bg-[#0a0c12] border border-[#1f2534] rounded-lg text-xs text-slate-100 focus:border-sky-400 transition-colors"
             >
               {categories.map(c => (
                 <option key={c} value={c}>
@@ -203,13 +205,13 @@ export function CatalogTab({
               aria-label="Статус модов"
               value={healthFilter}
               onChange={e => setHealthFilter(e.target.value as HealthFilter)}
-              className="w-full px-3 py-2 bg-[#0b1019] border border-[#263244] rounded-lg text-xs text-slate-100 focus:border-sky-400 transition-colors"
+              className="w-full px-3 py-2 bg-[#0a0c12] border border-[#1f2534] rounded-lg text-xs text-slate-100 focus:border-sky-400 transition-colors"
             >
               <option value="all">Любой статус</option>
-              <option value="green">Стабильно (зелёный)</option>
-              <option value="lime">Сносно (салатовый)</option>
-              <option value="yellow">Условно (жёлтый)</option>
-              <option value="red">Опасно (красный)</option>
+              <option value="green">Стабильно</option>
+              <option value="lime">Сносно</option>
+              <option value="yellow">Условно</option>
+              <option value="red">Опасно / конфликт</option>
             </select>
           </div>
 
@@ -218,7 +220,7 @@ export function CatalogTab({
               aria-label="Сортировка модов"
               value={sortBy}
               onChange={e => setSortBy(e.target.value as CatalogSort)}
-              className="w-full px-3 py-2 bg-[#0b1019] border border-[#263244] rounded-lg text-xs text-slate-100 focus:border-sky-400 transition-colors"
+              className="w-full px-3 py-2 bg-[#0a0c12] border border-[#1f2534] rounded-lg text-xs text-slate-100 focus:border-sky-400 transition-colors"
             >
               <option value="leaders-first">Сначала лидеры</option>
               <option value="best-first">По эффективности</option>
@@ -227,15 +229,15 @@ export function CatalogTab({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#223044]">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#191f2d]">
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setOnlyLeaders(v => !v)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap ${
                 onlyLeaders
-                  ? 'bg-sky-400/15 border-sky-400/50 text-sky-100'
-                  : 'bg-[#0b1019] border-[#263244] text-slate-300 hover:text-white hover:border-[#3b4d68]'
+                  ? 'bg-sky-500/12 border-sky-400/45 text-sky-100'
+                  : 'bg-[#0a0c12] border-[#1f2534] text-slate-300 hover:text-white hover:border-[#2e364a]'
               }`}
             >
               <Award className={`w-3.5 h-3.5 ${onlyLeaders ? 'text-sky-300' : 'text-slate-400'}`} />
@@ -247,10 +249,10 @@ export function CatalogTab({
               onClick={() => setHideUselessCovered(v => !v)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap ${
                 hideUselessCovered
-                  ? 'bg-emerald-500/15 border-emerald-400/45 text-emerald-200'
-                  : 'bg-[#0b1019] border-[#263244] text-slate-300 hover:text-white hover:border-[#3b4d68]'
+                  ? 'bg-emerald-500/12 border-emerald-400/40 text-emerald-200'
+                  : 'bg-[#0a0c12] border-[#1f2534] text-slate-300 hover:text-white hover:border-[#2e364a]'
               }`}
-              title="Скрывать плацебо, нерабочие на Forge, встроенные и 100% перекрытые более лучшими модами"
+              title="Скрывать плацебо, нерабочие на Forge, встроенные и полностью перекрытые моды"
             >
               {hideUselessCovered ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               Скрыть лишние и перекрытые
@@ -261,10 +263,10 @@ export function CatalogTab({
               onClick={() => setOnlyCompatibleInCatalog(v => !v)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap ${
                 onlyCompatibleInCatalog
-                  ? 'bg-sky-400/15 border-sky-400/50 text-sky-200'
-                  : 'bg-[#0b1019] border-[#263244] text-slate-300 hover:text-white hover:border-[#3b4d68]'
+                  ? 'bg-sky-500/12 border-sky-400/45 text-sky-200'
+                  : 'bg-[#0a0c12] border-[#1f2534] text-slate-300 hover:text-white hover:border-[#2e364a]'
               }`}
-              title="Показывать только моды, совместимые с текущей активной сборкой и выбранным просмотрщиком рецептов (JEI / EMI)"
+              title="Показывать только моды, совместимые с текущей активной сборкой"
             >
               {onlyCompatibleInCatalog ? <EyeOff className="w-3.5 h-3.5 text-sky-300" /> : <Eye className="w-3.5 h-3.5" />}
               Совм. со сборкой
@@ -272,10 +274,10 @@ export function CatalogTab({
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-300 tabular-nums">
-              Показано: <strong className="text-slate-50">{filteredMods.length}</strong>
+            <span className="text-xs text-slate-400 tabular-nums">
+              Показано: <strong className="text-slate-100">{filteredMods.length}</strong>
             </span>
-            <div className="flex items-center bg-[#0b1019] border border-[#263244] rounded-lg p-0.5">
+            <div className="flex items-center bg-[#0a0c12] border border-[#1f2534] rounded-lg p-0.5">
               {[
                 { k: 'cards', icon: Grid, title: 'Карточки' },
                 { k: 'list', icon: List, title: 'Список' },
@@ -288,7 +290,7 @@ export function CatalogTab({
                     type="button"
                     onClick={() => setCatalogView(v.k as CatalogView)}
                     className={`p-1.5 rounded-md transition-colors ${
-                      catalogView === v.k ? 'bg-sky-400 text-slate-950' : 'text-slate-400 hover:text-slate-100'
+                      catalogView === v.k ? 'bg-[#1d2536] text-sky-300' : 'text-slate-400 hover:text-slate-100'
                     }`}
                     title={v.title}
                     aria-label={v.title}
@@ -306,27 +308,57 @@ export function CatalogTab({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {paginatedMods.map(mod => {
             const badge = getHealthBadge(mod);
+            const modTier = getBaseHealthTier(mod);
             const grp = mod.groupId ? groupMetaMap.get(mod.groupId) : null;
             const addons = mod.isGroupLeader && grp ? grp.addons : [];
             const removedCount = mod.isGroupLeader && grp ? grp.removedAnalogs.length : 0;
             const isInChecker = checkedModIds.includes(mod.id);
             const updated = getModUpdatedLabel(mod);
             const restriction = getModRestrictionBadge(mod, builderSet, builderPrefs);
+            const catImpact = evaluateModImpactInPack(mod, builderSet, undefined, builderPrefs);
+            const rp = catImpact.resourceProfile;
+            const relPctStr =
+              catImpact.relativeImpactPct > 0
+                ? `+${catImpact.relativeImpactPct}%`
+                : `${catImpact.relativeImpactPct}%`;
+
+            const cardBorder =
+              modTier === 'red' || restriction?.tone === 'red'
+                ? 'border-rose-500/40 bg-rose-500/[0.03] hover:border-rose-400/70'
+                : modTier === 'yellow' || restriction?.tone === 'amber'
+                  ? 'border-amber-400/35 bg-amber-500/[0.025] hover:border-amber-400/65'
+                  : 'border-[#1f2534] bg-[#121620] hover:border-sky-400/45';
+
+            const impactColor =
+              catImpact.relativeImpactPct > 0
+                ? 'text-emerald-300'
+                : catImpact.relativeImpactPct < 0
+                  ? 'text-rose-300'
+                  : 'text-slate-400';
 
             return (
               <div
                 key={mod.id}
                 onClick={() => onOpenDetail(mod)}
-                className="bg-[#111824] border border-[#2a384e] hover:border-sky-400/50 rounded-xl p-4 cursor-pointer transition-colors flex flex-col justify-between gap-3"
+                className={`border rounded-xl p-4 cursor-pointer transition-colors flex flex-col justify-between gap-3 ${cardBorder}`}
               >
                 <div className="space-y-2.5">
-                  <div className="flex items-start justify-between gap-2">
+                  {/* Top Header: Title + Inline Score + CF */}
+                  <div className="flex items-start justify-between gap-2.5">
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-sm font-semibold text-slate-50 truncate">{mod.name}</h3>
+                      <div className="flex items-baseline justify-between gap-2">
+                        <h3 className="text-[14px] font-semibold text-slate-50 truncate">{mod.name}</h3>
+                        <span
+                          className={`shrink-0 text-[11px] font-mono font-semibold tabular-nums ${impactColor}`}
+                          title={`Относительный импакт: ${relPctStr} (${catImpact.impactPoints}/100 б.)`}
+                        >
+                          {relPctStr} · {catImpact.impactPoints}б.
+                        </span>
+                      </div>
                       <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-400 min-w-0">
                         <span className="truncate">{mod.groupTitle || mod.category} · {mod.platform}</span>
                         {updated && (
-                          <span className="shrink-0 font-mono text-slate-300">· обн. {updated}</span>
+                          <span className="shrink-0 font-mono text-slate-400">· {updated}</span>
                         )}
                       </div>
                     </div>
@@ -336,7 +368,7 @@ export function CatalogTab({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={e => e.stopPropagation()}
-                      className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#0b1019] hover:bg-[#f16436] border border-[#2a384e] hover:border-[#f16436] text-slate-200 hover:text-white text-[11px] font-medium transition-colors"
+                      className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#0a0c12] hover:bg-[#f16436] border border-[#1f2534] hover:border-[#f16436] text-slate-300 hover:text-white text-[11px] font-medium transition-colors"
                       title="Открыть на CurseForge"
                     >
                       CF
@@ -344,57 +376,68 @@ export function CatalogTab({
                     </a>
                   </div>
 
-                  <p className="text-xs text-slate-200 leading-relaxed line-clamp-3">
+                  {/* Resource & Trade-off Signal Line */}
+                  <div
+                    className={`text-[11px] font-medium leading-snug ${
+                      rp.hasTradeoff ? 'text-amber-300/95' : 'text-emerald-300/85'
+                    }`}
+                    title={rp.tradeoffNote}
+                  >
+                    {rp.shortTag}
+                  </div>
+
+                  <p className="text-xs text-slate-300 leading-relaxed line-clamp-2">
                     {mod.description}
                   </p>
 
                   {addons.length > 0 && (
-                    <div className="pt-1 space-y-1">
-                      <div className="text-[11px] font-medium text-slate-400">
-                        Аддоны ({addons.length}):
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {addons.slice(0, 5).map(ad => (
+                    <div className="text-[11px] text-slate-400 leading-snug pt-0.5">
+                      <span className="text-slate-400 font-medium">Аддоны ({addons.length}): </span>
+                      {addons.slice(0, 4).map((ad, idx) => (
+                        <span key={ad.id}>
+                          {idx > 0 && <span className="text-slate-600"> · </span>}
                           <button
-                            key={ad.id}
                             type="button"
                             onClick={e => {
                               e.stopPropagation();
                               onOpenDetail(ad);
                             }}
-                            className="px-2 py-0.5 rounded bg-[#0b1019] hover:bg-[#192334] border border-[#263244] text-[11px] text-sky-300 transition-colors"
+                            className="text-sky-300 hover:text-sky-200 hover:underline transition-colors"
                           >
                             {ad.name}
                           </button>
-                        ))}
-                        {addons.length > 5 && (
-                          <span className="text-[11px] text-slate-400 px-1">+{addons.length - 5}</span>
-                        )}
-                      </div>
+                        </span>
+                      ))}
+                      {addons.length > 4 && (
+                        <span className="text-slate-500"> · +{addons.length - 4}</span>
+                      )}
                     </div>
                   )}
                 </div>
 
-                <div className="pt-2.5 border-t border-[#223044] flex items-center justify-between gap-2">
-                  <span className="text-[11px] text-slate-300 truncate">
+                <div className="pt-2.5 border-t border-[#191f2d] flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-slate-300 truncate flex items-center gap-1.5">
                     {restriction && (restriction.tone === 'red' || restriction.tone === 'amber') ? (
-                      <span className={`font-medium ${restriction.tone === 'red' ? 'text-rose-300' : 'text-amber-300'}`}>
+                      <span className={`font-medium truncate ${restriction.tone === 'red' ? 'text-rose-300' : 'text-amber-300'}`}>
                         {restriction.text}
                       </span>
                     ) : removedCount > 0 ? (
-                      <span className="inline-flex items-center gap-1 text-slate-200">
+                      <span className="inline-flex items-center gap-1 text-slate-300 truncate">
                         <Layers className="w-3 h-3 text-amber-300 shrink-0" />
                         +{removedCount} аналогов внутри
                       </span>
                     ) : mod.coveredBy ? (
-                      <span className="inline-flex items-center gap-1 text-slate-300">
+                      <span className="inline-flex items-center gap-1 text-slate-300 truncate">
                         <PackageCheck className="w-3 h-3 shrink-0" />
                         Встроено в {mod.coveredBy}
                       </span>
                     ) : restriction?.tone === 'sky' ? (
-                      <span className="font-medium text-sky-300">{restriction.text}</span>
+                      <span className="font-medium text-sky-300 truncate">{restriction.text}</span>
                     ) : (
-                      <span className={`font-medium ${badge.textCls}`}>{badge.text}</span>
+                      <>
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${badge.dotCls}`} />
+                        <span className={`font-medium truncate ${badge.textCls}`}>{badge.text}</span>
+                      </>
                     )}
                   </span>
 
@@ -407,7 +450,7 @@ export function CatalogTab({
                     className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors whitespace-nowrap shrink-0 ${
                       isInChecker
                         ? 'bg-emerald-500/15 border-emerald-400/45 text-emerald-200'
-                        : 'bg-[#0b1019] border-[#263244] text-slate-200 hover:bg-[#192334] hover:border-sky-400/40'
+                        : 'bg-[#0a0c12] border-[#1f2534] text-slate-200 hover:bg-[#1a2030] hover:border-sky-400/40'
                     }`}
                   >
                     {isInChecker ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
@@ -421,30 +464,51 @@ export function CatalogTab({
       )}
 
       {catalogView === 'list' && (
-        <div className="bg-[#111824] border border-[#2a384e] rounded-xl divide-y divide-[#223044] overflow-hidden">
+        <div className="bg-[#121620] border border-[#1f2534] rounded-xl divide-y divide-[#191f2d] overflow-hidden">
           {paginatedMods.map(mod => {
             const badge = getHealthBadge(mod);
+            const modTier = getBaseHealthTier(mod);
             const grp = mod.groupId ? groupMetaMap.get(mod.groupId) : null;
             const removedCount = mod.isGroupLeader && grp ? grp.removedAnalogs.length : 0;
             const addonsCount = mod.isGroupLeader && grp ? grp.addons.length : 0;
             const updated = getModUpdatedLabel(mod);
+            const catImpact = evaluateModImpactInPack(mod, builderSet, undefined, builderPrefs);
+            const rp = catImpact.resourceProfile;
+            const relPctStr =
+              catImpact.relativeImpactPct > 0
+                ? `+${catImpact.relativeImpactPct}%`
+                : `${catImpact.relativeImpactPct}%`;
+
+            const rowTint =
+              modTier === 'red'
+                ? 'bg-rose-500/[0.04] hover:bg-rose-500/[0.08]'
+                : modTier === 'yellow'
+                  ? 'bg-amber-500/[0.03] hover:bg-amber-500/[0.06]'
+                  : 'hover:bg-[#171d2b]';
 
             return (
               <div
                 key={mod.id}
                 onClick={() => onOpenDetail(mod)}
-                className="px-4 py-3 hover:bg-[#172133] cursor-pointer transition-colors flex items-center justify-between gap-4"
+                className={`px-4 py-3 cursor-pointer transition-colors flex items-center justify-between gap-4 ${rowTint}`}
               >
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-baseline gap-2">
+                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs">
+                    <span className={`w-1.5 h-1.5 rounded-full self-center shrink-0 ${badge.dotCls}`} />
                     <span className="text-sm font-semibold text-slate-50">{mod.name}</span>
+                    <span className="font-mono font-semibold text-emerald-300 tabular-nums">
+                      {relPctStr} · {catImpact.impactPoints}б.
+                    </span>
                     <span className={`text-[11px] font-medium ${badge.textCls}`}>{badge.text}</span>
                     <span className="text-[11px] text-slate-400">{mod.platform}</span>
-                    {updated && <span className="text-[11px] text-slate-400 font-mono">· обн. {updated}</span>}
-                    {addonsCount > 0 && <span className="text-[11px] text-sky-300">+{addonsCount} аддонов</span>}
-                    {removedCount > 0 && <span className="text-[11px] text-slate-300">· {removedCount} аналогов внутри</span>}
+                    {updated && <span className="text-[11px] text-slate-500 font-mono">· {updated}</span>}
+                    <span className={`text-[11px] ${rp.hasTradeoff ? 'text-amber-300' : 'text-slate-400'}`}>
+                      · {rp.shortTag}
+                    </span>
+                    {addonsCount > 0 && <span className="text-[11px] text-sky-300">· +{addonsCount} аддонов</span>}
+                    {removedCount > 0 && <span className="text-[11px] text-slate-400">· {removedCount} аналогов внутри</span>}
                   </div>
-                  <p className="text-xs text-slate-300 mt-0.5 truncate">{mod.description}</p>
+                  <p className="text-xs text-slate-300 mt-0.5 truncate pl-3.5">{mod.description}</p>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
@@ -453,9 +517,9 @@ export function CatalogTab({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={e => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#0b1019] hover:bg-[#f16436] border border-[#263244] hover:border-[#f16436] text-slate-200 hover:text-white text-xs transition-colors"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#0a0c12] hover:bg-[#f16436] border border-[#1f2534] hover:border-[#f16436] text-slate-200 hover:text-white text-xs transition-colors"
                   >
-                    CurseForge
+                    CF
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
@@ -466,42 +530,56 @@ export function CatalogTab({
       )}
 
       {catalogView === 'table' && (
-        <div className="bg-[#111824] border border-[#2a384e] rounded-xl overflow-x-auto">
+        <div className="bg-[#121620] border border-[#1f2534] rounded-xl overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-[#2a384e] text-slate-300 bg-[#0b1019]">
+              <tr className="border-b border-[#1f2534] text-slate-400 bg-[#0a0c12]">
                 <th className="py-2.5 px-4 font-semibold">Мод</th>
-                <th className="py-2.5 px-4 font-semibold">Группа / Категория</th>
+                <th className="py-2.5 px-4 font-semibold">Импакт</th>
+                <th className="py-2.5 px-4 font-semibold">Компромисс / Нагрузка</th>
                 <th className="py-2.5 px-4 font-semibold">Статус</th>
-                <th className="py-2.5 px-4 font-semibold">Аддоны / Аналоги</th>
+                <th className="py-2.5 px-4 font-semibold">Группа</th>
                 <th className="py-2.5 px-4 font-semibold text-right">CurseForge</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#223044]">
+            <tbody className="divide-y divide-[#191f2d]">
               {paginatedMods.map(mod => {
                 const badge = getHealthBadge(mod);
-                const grp = mod.groupId ? groupMetaMap.get(mod.groupId) : null;
+                const modTier = getBaseHealthTier(mod);
+                const catImpact = evaluateModImpactInPack(mod, builderSet, undefined, builderPrefs);
+                const rp = catImpact.resourceProfile;
+                const relPctStr =
+                  catImpact.relativeImpactPct > 0
+                    ? `+${catImpact.relativeImpactPct}%`
+                    : `${catImpact.relativeImpactPct}%`;
+                const trTint =
+                  modTier === 'red'
+                    ? 'bg-rose-500/[0.04] hover:bg-rose-500/[0.08]'
+                    : modTier === 'yellow'
+                      ? 'bg-amber-500/[0.03] hover:bg-amber-500/[0.06]'
+                      : 'hover:bg-[#171d2b]';
+
                 return (
                   <tr
                     key={mod.id}
                     onClick={() => onOpenDetail(mod)}
-                    className="hover:bg-[#172133] cursor-pointer transition-colors"
+                    className={`cursor-pointer transition-colors ${trTint}`}
                   >
                     <td className="py-2.5 px-4 font-semibold text-slate-50">{mod.name}</td>
-                    <td className="py-2.5 px-4 text-slate-300">{mod.groupTitle || mod.category}</td>
-                    <td className="py-2.5 px-4">
-                      <span className={`px-2 py-0.5 rounded border text-[11px] font-medium ${badge.cls}`}>
+                    <td className="py-2.5 px-4 font-mono tabular-nums text-emerald-300 font-semibold whitespace-nowrap">
+                      {relPctStr} · {catImpact.impactPoints}б.
+                    </td>
+                    <td className={`py-2.5 px-4 ${rp.hasTradeoff ? 'text-amber-300' : 'text-slate-300'}`}>
+                      {rp.shortTag}
+                    </td>
+                    <td className="py-2.5 px-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center gap-1.5 font-medium ${badge.textCls}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${badge.dotCls}`} />
                         {badge.text}
                       </span>
                     </td>
-                    <td className="py-2.5 px-4 text-slate-200 tabular-nums">
-                      {mod.isGroupLeader && grp
-                        ? `${grp.addons.length} аддонов / ${grp.removedAnalogs.length} скрыто`
-                        : mod.coveredBy
-                          ? `Встроено в ${mod.coveredBy}`
-                          : mod.platform}
-                    </td>
-                    <td className="py-2.5 px-4 text-right">
+                    <td className="py-2.5 px-4 text-slate-400">{mod.groupTitle || mod.category}</td>
+                    <td className="py-2.5 px-4 text-right whitespace-nowrap">
                       <a
                         href={mod.curseforgeUrl}
                         target="_blank"
@@ -534,8 +612,8 @@ export function CatalogTab({
                 }}
                 className={`px-2.5 py-1 rounded-md border tabular-nums transition-colors ${
                   itemsPerPage === n
-                    ? 'bg-sky-400 border-sky-400 text-slate-950 font-semibold'
-                    : 'bg-[#111824] border-[#263244] text-slate-300 hover:text-white'
+                    ? 'bg-sky-600 border-sky-500 text-white font-semibold'
+                    : 'bg-[#121620] border-[#1f2534] text-slate-300 hover:text-white'
                 }`}
               >
                 {n === 500 ? 'Все' : n}
@@ -547,7 +625,7 @@ export function CatalogTab({
               type="button"
               disabled={currentPage <= 1}
               onClick={() => setCurrentPage(p => p - 1)}
-              className="px-3 py-1.5 rounded-lg bg-[#111824] border border-[#2a384e] text-slate-200 hover:border-sky-400/50 disabled:opacity-40 transition-colors"
+              className="px-3 py-1.5 rounded-md bg-[#121620] border border-[#1f2534] text-slate-200 hover:border-sky-400/50 disabled:opacity-40 transition-colors"
             >
               Назад
             </button>
@@ -558,7 +636,7 @@ export function CatalogTab({
               type="button"
               disabled={currentPage >= totalPages}
               onClick={() => setCurrentPage(p => p + 1)}
-              className="px-3 py-1.5 rounded-lg bg-[#111824] border border-[#2a384e] text-slate-200 hover:border-sky-400/50 disabled:opacity-40 transition-colors"
+              className="px-3 py-1.5 rounded-md bg-[#121620] border border-[#1f2534] text-slate-200 hover:border-sky-400/50 disabled:opacity-40 transition-colors"
             >
               Вперёд
             </button>

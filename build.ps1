@@ -67,6 +67,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "npm run build failed" }
 
     $WebUIDir = Join-Path $RootDir "desktop\webui"
+    New-Item -ItemType Directory -Force -Path $WebUIDir | Out-Null
     foreach ($sub in @("assets", "data", "index.html")) {
         $target = Join-Path $WebUIDir $sub
         if (Test-Path $target) {

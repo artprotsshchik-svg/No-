@@ -4,17 +4,18 @@
   :root {
     color-scheme: dark;
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --bg-canvas: #090d14;
-    --bg-panel: #111824;
-    --bg-recessed: #0b1019;
-    --bg-elevated: #182233;
-    --border-hairline: #273549;
-    --border-strong: #3a4f6d;
+    --bg-canvas: #090b10;
+    --bg-sidebar: #0d1017;
+    --bg-panel: #121620;
+    --bg-recessed: #0a0c12;
+    --bg-elevated: #181d2a;
+    --border-hairline: #1f2534;
+    --border-strong: #2e364a;
   }
 
   body {
-    background-color: #090d14;
-    color: #f8fafc;
+    background-color: #090b10;
+    color: #eef1f7;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: -0.005em;
@@ -31,7 +32,7 @@
   a:focus-visible,
   input:focus-visible,
   select:focus-visible {
-    outline: 2px solid rgba(56, 189, 248, 0.78);
+    outline: 2px solid rgba(56, 189, 248, 0.8);
     outline-offset: 2px;
   }
 
@@ -41,7 +42,7 @@
 
   * {
     scrollbar-width: thin;
-    scrollbar-color: #33445f transparent;
+    scrollbar-color: #272e40 transparent;
   }
 }
 

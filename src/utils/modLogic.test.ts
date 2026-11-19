@@ -46,7 +46,7 @@ test('all mods have valid CurseForge URLs, non-empty fields, and 100% MOD_GROUPS
 });
 
 test('all core Nvidium and Alloyium presets have zero conflicts, zero red warnings, and zero yellow warnings', () => {
-  assert.equal(MOD_PRESETS.length, 7, `Expected 7 core Nvidium/Alloyium presets, got ${MOD_PRESETS.length}`);
+  assert.equal(MOD_PRESETS.length, 2, `Expected 2 core Nvidium/Alloyium presets, got ${MOD_PRESETS.length}`);
   assert.ok(MOD_PRESETS.every(p => p.modIds.includes('nvidium') || p.modIds.includes('alloyium')));
 
   for (const preset of MOD_PRESETS) {
@@ -913,7 +913,396 @@ test('persistence helpers sanitize saved tabs, dates, mod IDs, and builder prefe
   assert.equal(invalidTab?.activeTab, undefined);
 });
 
+test('synergy audit fixes: Emberbium vs Oculus/Alloyium, Nvidium Forged symmetry, HC-HariChunk, Tritium, Bobby Reforged, and rules integrity', async () => {
+  const { INCOMPATIBILITY_RULES } = await import('../data/modsData.ts');
+  const { normalizeSlug } = await import('./modAnalyzer.ts');
 
+  // Every mod listed in rules.json must resolve to a real mod in MODS_DATABASE (no phantom entries like OptiLeaves)
+  const dbSlugs = new Set(MODS_DATABASE.map(m => normalizeSlug(m.name)));
+  for (const rule of INCOMPATIBILITY_RULES) {
+    for (const cm of rule.conflictingMods) {
+      assert.ok(dbSlugs.has(normalizeSlug(cm)), `Unresolved mod "${cm}" in rule "${rule.title}"`);
+    }
+  }
 
+  // Emberbium conflicts with Oculus, Faster Iris Shadow Mapper, and Alloyium; Embeddium conflicts with Emberlens
+  for (const clashPair of [
+    ['emberbium', 'oculus'],
+    ['emberbium', 'alloyium'],
+    ['emberbium', 'faster-iris-shadow-mapper'],
+    ['embeddium', 'emberlens'],
+  ]) {
+    const res = analyzeSelection(clashPair);
+    assert.ok(res.conflicts.length >= 1, `Expected conflict between ${clashPair.join(' + ')}`);
+  }
+
+  // Oculus + Alloyium + Faster Iris Shadow Mapper remains conflict-free on Embeddium
+  const cleanOculusAlloyium = analyzeSelection(['embeddium', 'oculus', 'faster-iris-shadow-mapper', 'alloyium']);
+  assert.equal(cleanOculusAlloyium.conflicts.length, 0);
+
+  // Nvidium + Nvidium Forged do NOT conflict with each other, but Nvidium Forged conflicts with Oculus & Alloyium
+  const cleanNvidiumPair = analyzeSelection(['embeddium', 'sinytra-connector', 'forgified-fabric-api', 'nvidium', 'nvidium-forged']);
+  assert.equal(cleanNvidiumPair.conflicts.length, 0);
+  assert.equal(cleanNvidiumPair.warnings.length, 0);
+
+  const nvidForgedOculus = analyzeSelection(['embeddium', 'sinytra-connector', 'forgified-fabric-api', 'nvidium', 'nvidium-forged', 'oculus']);
+  assert.ok(nvidForgedOculus.conflictingIdSet.has('nvidium-forged'));
+  assert.ok(nvidForgedOculus.conflictingIdSet.has('oculus'));
+
+  const nvidForgedAlloyium = analyzeSelection(['embeddium', 'sinytra-connector', 'forgified-fabric-api', 'nvidium-forged', 'alloyium']);
+  assert.ok(nvidForgedAlloyium.conflictingIdSet.has('nvidium-forged'));
+  assert.ok(nvidForgedAlloyium.conflictingIdSet.has('alloyium'));
+
+  // HC-HariChunk conflicts with C2ME-Forge and smartFixAssembly strips it
+  const hariClash = analyzeSelection(['concurrent-chunk-management-engine-forge-c2me', 'hc-harichunk']);
+  assert.ok(hariClash.conflicts.length >= 1);
+  const fixedHari = smartFixAssembly(['embeddium', 'concurrent-chunk-management-engine-forge-c2me', 'hc-harichunk']);
+  assert.ok(fixedHari.includes('concurrent-chunk-management-engine-forge-c2me'));
+  assert.ok(!fixedHari.includes('hc-harichunk'));
+
+  // Tritium conflicts with CullLessLeaves Reforged
+  const tritiumClash = analyzeSelection(['culllessleaves-reforged', 'tritium']);
+  assert.ok(tritiumClash.conflicts.length >= 1);
+
+  // Bobby Reforged is clean standalone, but flagged redundant & cleaned when Distant Horizons is active
+  const bobbySolo = analyzeSelection(['embeddium', 'bobby-reforged']);
+  assert.equal(bobbySolo.warnings.length, 0);
+  const bobbyWithDh = analyzeSelection(['embeddium', 'distant-horizons', 'bobby-reforged']);
+  assert.ok(bobbyWithDh.warnings.some(w => w.modId === 'bobby-reforged' && w.severity === 'yellow'));
+  const fixedDh = smartFixAssembly(['embeddium', 'distant-horizons', 'bobby-reforged']);
+  assert.ok(!fixedDh.includes('bobby-reforged'));
+
+  // Newly mapped dependencies: Sinytra -> FFAPI, Accelerated Recoiling -> Accelerated Rendering, GeckoLib tree nesting
+  const sinytraMissingFfapi = analyzeSelection(['sinytra-connector']);
+  assert.ok(sinytraMissingFfapi.warnings.some(w => w.modId === 'sinytra-connector' && w.fixModIds?.includes('forgified-fabric-api')));
+
+  const recoilingMissingParent = analyzeSelection(['embeddium', 'accelerated-recoiling']);
+  assert.ok(recoilingMissingParent.warnings.some(w => w.modId === 'accelerated-recoiling' && w.fixModIds?.includes('accelerated-rendering')));
+
+  const geckoTree = organizeAssemblyTree(['geckolib', 'geckolib-animation-optimizer', 'geckolibbetterfps']);
+  assert.equal(geckoTree.length, 1);
+  assert.equal(geckoTree[0].parent.id, 'geckolib');
+  assert.equal(geckoTree[0].children.length, 2);
+});
+
+test('deep mod logic audit: no false coveredBy substrings, no overbroad exclusive conflicts, and accurate loader/tier checks', async () => {
+  const { matchesCoveredByName } = await import('./modAnalyzer.ts');
+  const byId = new Map(MODS_DATABASE.map(m => [m.id, m]));
+
+  // Whole-word coveredBy matching prevents Optimi matching "Immersive Optimization."
+  assert.equal(matchesCoveredByName('Immersive Optimization.', 'Optimi'), false);
+  assert.equal(matchesCoveredByName('Immersive Optimization.', 'Immersive Optimization'), true);
+  assert.equal(matchesCoveredByName('AllTheLeaks + ModernFix', 'ModernFix'), true);
+
+  // Non-conflicting utility tweaks in groups must NOT delete core leaders or trigger false conflicts
+  const aiToggle = toggleModSmart(['embeddium', 'radium-re-reforged'], 'ai-improvements', { strict: true });
+  assert.ok(aiToggle.nextIds.includes('radium-re-reforged'));
+  assert.ok(aiToggle.nextIds.includes('ai-improvements'));
+
+  const fastEventsToggle = toggleModSmart(['embeddium'], 'fast-events', { strict: true });
+  assert.ok(fastEventsToggle.nextIds.includes('embeddium'));
+  assert.ok(fastEventsToggle.nextIds.includes('fast-events'));
+
+  const tcpToggle = toggleModSmart(['krypton-reno'], 'tcp-nodeway', { strict: true });
+  assert.ok(tcpToggle.nextIds.includes('krypton-reno'));
+  assert.ok(tcpToggle.nextIds.includes('tcp-nodeway'));
+
+  const renderScaleToggle = toggleModSmart(['dynamic-fps'], 'renderscale', { strict: true });
+  assert.ok(renderScaleToggle.nextIds.includes('dynamic-fps'));
+  assert.ok(renderScaleToggle.nextIds.includes('renderscale'));
+
+  // smartFixAssembly preserves compatible utility tweaks alongside group leaders
+  const keptUtilities = smartFixAssembly(['embeddium', 'fast-events', 'radium-re-reforged', 'ai-improvements', 'krypton-reno', 'tcp-nodeway', 'dynamic-fps', 'renderscale']);
+  for (const id of ['embeddium', 'fast-events', 'radium-re-reforged', 'ai-improvements', 'krypton-reno', 'tcp-nodeway', 'dynamic-fps', 'renderscale']) {
+    assert.ok(keptUtilities.includes(id), `smartFixAssembly dropped compatible mod ${id}`);
+  }
+
+  // Adding Chloride or LightStar to Emberbium+Nvidium keeps Emberbium & Nvidium intact (defaults to Embeddium only when empty)
+  const emberChloride = toggleModSmart(['emberbium', 'sinytra-connector', 'forgified-fabric-api', 'nvidium'], 'sodium-chloride', { strict: true });
+  assert.ok(emberChloride.nextIds.includes('emberbium'));
+  assert.ok(emberChloride.nextIds.includes('nvidium'));
+  assert.ok(emberChloride.nextIds.includes('sodium-chloride'));
+  assert.ok(!emberChloride.nextIds.includes('embeddium'));
+  assert.equal(analyzeSelection(emberChloride.nextIds).conflicts.length, 0);
+
+  const freshChloride = toggleModSmart([], 'sodium-chloride', { strict: true });
+  assert.ok(freshChloride.nextIds.includes('embeddium'));
+
+  // Native Universal (Forge/Fabric) mods without superseder resolve to lime, whereas superseded forks/unsupported 1.20.4+ mods warn accurately
+  assert.equal(getCheckerTier(byId.get('alternate-current')!).tier, 'lime');
+  assert.equal(getCheckerTier(byId.get('spark-profiler-au-naturel-edit-java-25')!).tier, 'yellow');
+  assert.equal(getCheckerTier(byId.get('voxy')!).tier, 'red');
+  assert.equal(getCheckerTier(byId.get('scalablelux')!).tier, 'red');
+  assert.ok(analyzeSelection(['spark', 'spark-profiler-au-naturel-edit-java-25']).conflicts.length >= 1);
+  assert.ok(analyzeSelection(['embeddium', 'voxy']).warnings.some(w => w.modId === 'voxy' && w.severity === 'red'));
+});
+
+test('cross-mod impact & compatibility calibration: no Rubidium slug collision, full smartFix coverage, accurate tiers & scores', async () => {
+  const { getModEffectivenessScore, getRuleConflictingIds } = await import('./modAnalyzer.ts');
+  const byId = new Map(MODS_DATABASE.map(m => [m.id, m]));
+
+  // Rubidium (Fluid Render Fix) must NOT falsely collide with Sodium forks
+  assert.equal(analyzeSelection(['embeddium', 'rubidium-fluid-render-fix']).conflicts.length, 0);
+  assert.equal(analyzeSelection(['rubidium', 'rubidium-fluid-render-fix']).conflicts.length, 0);
+
+  // Emberbium explicitly conflicts with Embeddium-0.3.31-bound mesh/chunk addons
+  for (const addonId of ['revidium-accedium', 'maple-mesh-render', 'sodium-sightline', 'sodium-streamline', 'sodium-fovea']) {
+    const res = analyzeSelection(['emberbium', addonId]);
+    assert.ok(res.conflicts.length >= 1, `Expected conflict between emberbium and ${addonId}`);
+  }
+
+  // Every single conflicting pair across the entire 510-mod DB is cleanly resolved to 0 conflicts by smartFixAssembly
+  for (const m of MODS_DATABASE) {
+    for (const cid of getRuleConflictingIds(m.id)) {
+      if (m.id >= cid) continue;
+      const fixed = smartFixAssembly([m.id, cid]);
+      assert.equal(
+        analyzeSelection(fixed).conflicts.length,
+        0,
+        `smartFixAssembly left conflict for pair ${m.id} + ${cid}`
+      );
+    }
+  }
+
+  // Experimental / frozen / archived / unverified C2ME forks classify as yellow
+  for (const id of ['emberlens', 'hc-harichunk', 'bobby-reforged', 'better-biome-reblend']) {
+    assert.equal(getBaseHealthTier(byId.get(id)!), 'yellow', `${id} should be yellow`);
+  }
+
+  // Every superseded mod strictly scores below every viable superseder
+  for (const m of MODS_DATABASE) {
+    if (!m.supersededBy) continue;
+    const ms = getModEffectivenessScore(m);
+    for (const sid of m.supersededBy) {
+      const sm = byId.get(sid);
+      if (sm) {
+        assert.ok(
+          ms < getModEffectivenessScore(sm),
+          `Expected ${m.id} (${ms}) < superseder ${sm.id} (${getModEffectivenessScore(sm)})`
+        );
+      }
+    }
+  }
+
+  // Relative impact hierarchy: native Forge ports > Sinytra bridges, core engines > pure libraries, Oculus > Emberlens
+  assert.ok(
+    getModEffectivenessScore(byId.get('concurrent-chunk-management-engine-forge-c2me')!) >
+      getModEffectivenessScore(byId.get('c2me-concurrent-chunk-management-engine')!)
+  );
+  assert.ok(
+    getModEffectivenessScore(byId.get('c2me-concurrent-chunk-management-engine')!) >
+      getModEffectivenessScore(byId.get('hc-harichunk')!)
+  );
+  assert.ok(getModEffectivenessScore(byId.get('vmp-forge')!) > getModEffectivenessScore(byId.get('very-many-players-vmp')!));
+  assert.ok(getModEffectivenessScore(byId.get('emberbium')!) > getModEffectivenessScore(byId.get('kotlin-for-forge')!));
+  assert.ok(getModEffectivenessScore(byId.get('radium-re-reforged')!) > getModEffectivenessScore(byId.get('matlib')!));
+  assert.ok(getModEffectivenessScore(byId.get('oculus')!) > getModEffectivenessScore(byId.get('emberlens')!));
+
+  // Precise incompatibility coverage: Carbons, expanded OptiFine hub, Acedium vs Oculus, Voxy vs DH, contextual overlaps
+  assert.ok(analyzeSelection(['embeddium', 'carbons']).conflicts.length >= 1);
+  assert.ok(analyzeSelection(['optifine', 'immediatelyfast']).conflicts.length >= 1);
+  assert.ok(analyzeSelection(['optifine', 'distant-horizons']).conflicts.length >= 1);
+  assert.ok(analyzeSelection(['optifine', 'nvidium']).conflicts.length >= 1);
+  assert.ok(analyzeSelection(['embeddium', 'revidium-accedium', 'oculus']).conflicts.length >= 1);
+  assert.ok(analyzeSelection(['distant-horizons', 'voxy']).conflicts.length >= 1);
+
+  const chlorideLights = analyzeSelection(['embeddium', 'sodium-chloride', 'sodium-embeddium-options-api', 'sodium-embeddium-dynamic-lights']);
+  assert.equal(chlorideLights.conflicts.length, 0);
+  assert.ok(chlorideLights.warnings.some(w => w.modId === 'sodium-embeddium-dynamic-lights' && w.severity === 'yellow'));
+
+  const tritiumEber = analyzeSelection(['embeddium', 'tritium', 'enhanced-block-entities-reloaded', 'matlib']);
+  assert.equal(tritiumEber.conflicts.length, 0);
+  assert.ok(tritiumEber.warnings.some(w => w.modId === 'tritium' && w.severity === 'yellow'));
+});
+
+test('contextual interaction & impact engine: synergies, overlaps, orphaned bridges, and subsystem coverage', async () => {
+  const { evaluateModImpactInPack, summarizeAssemblyImpact } = await import('./modAnalyzer.ts');
+
+  // Farsight becomes superseded when Distant Horizons is active
+  const farsightWithDh = analyzeSelection(['embeddium', 'distant-horizons', 'farsight']);
+  assert.ok(farsightWithDh.warnings.some(w => w.modId === 'farsight' && w.severity === 'yellow'));
+
+  // ALI without FastALI triggers join-freeze warning; DH+Oculus without DH Memory Fix triggers memory warning
+  const aliNoFast = analyzeSelection(['embeddium', 'just-enough-items-jei', 'advanced-loot-info-ali']);
+  assert.ok(aliNoFast.warnings.some(w => w.modId === 'advanced-loot-info-ali' && w.fixModIds?.includes('fastali')));
+
+  const dhOculusNoFix = analyzeSelection(['embeddium', 'oculus', 'distant-horizons']);
+  assert.ok(dhOculusNoFix.warnings.some(w => w.modId === 'distant-horizons' && w.fixModIds?.includes('distant-horizons-memory-fix-dh')));
+
+  // Sinytra Connector without any Fabric mod triggers yellow unused-bridge warning
+  const idleSinytra = analyzeSelection(['embeddium', 'sinytra-connector', 'forgified-fabric-api']);
+  assert.ok(idleSinytra.warnings.some(w => w.modId === 'sinytra-connector' && w.severity === 'yellow'));
+
+  // Unofficial Sodium forks, gameplay changers, and experimental meshes classify as yellow
+  for (const id of ['prismanium', 'polidium', 'ksyxis', 'better-tnt', 'perfomant-boom', 'maple-mesh-render']) {
+    assert.equal(getBaseHealthTier(MODS_DATABASE.find(m => m.id === id)!), 'yellow', `${id} should be yellow`);
+  }
+
+  // Contextual impact reflects active consumers, synergies, and overlaps
+  const matlibMod = MODS_DATABASE.find(m => m.id === 'matlib')!;
+  const matlibZero = evaluateModImpactInPack(matlibMod, new Set(['embeddium', 'matlib']));
+  assert.equal(matlibZero.level, 'zero');
+
+  const matlibSupport = evaluateModImpactInPack(matlibMod, new Set(['embeddium', 'enhanced-block-entities-reloaded', 'matlib']));
+  assert.equal(matlibSupport.level, 'support');
+
+  const fleroviumMod = MODS_DATABASE.find(m => m.id === 'flerovium')!;
+  const fleroviumInPack = evaluateModImpactInPack(fleroviumMod, new Set(['emberbium', 'flerovium', 'immediatelyfast']));
+  assert.equal(fleroviumInPack.level, 'high');
+  assert.ok(fleroviumInPack.interactions.some(i => i.kind === 'synergy' && i.targetIds.includes('emberbium')));
+
+  const extrasMod = MODS_DATABASE.find(m => m.id === 'embeddium-extras')!;
+  const extrasOverlap = evaluateModImpactInPack(extrasMod, new Set(['embeddium', 'embeddium-extras', 'sodium-chloride']));
+  assert.ok(extrasOverlap.interactions.some(i => i.kind === 'overlap' && i.targetIds.includes('sodium-chloride')));
+
+  // Core Nvidium+Emberbium preset achieves 100% subsystem coverage and multiple active synergies with 0 overlaps
+  const nvidiumPreset = MOD_PRESETS.find(p => p.id === 'user-nvidium-emberbium')!;
+  const summary = summarizeAssemblyImpact(nvidiumPreset.modIds);
+  assert.equal(summary.coveragePct, 100);
+  assert.equal(summary.missingSubsystems.length, 0);
+  assert.ok(summary.synergies.length >= 4);
+  assert.equal(summary.overlaps.length, 0);
+  assert.equal(summary.zeroOrLowImpactIds.length, 0);
+  assert.ok(summary.assemblyScore >= 80, `Expected Nvidium+Emberbium assemblyScore >= 80, got ${summary.assemblyScore}`);
+  assert.equal(summary.subsystemScores.length, 7);
+});
+
+test('relative % impact, 0..100 impactPoints, co-usage verdicts, and detailed analog comparison engine', async () => {
+  const { evaluateModImpactInPack, summarizeAssemblyImpact, getModAnalogsComparison } = await import('./modAnalyzer.ts');
+  const byId = new Map(MODS_DATABASE.map(m => [m.id, m]));
+
+  // 1. Marginal % and 0..100 points differentiate core engines vs superseded/conflicting mods
+  const basePack = new Set(['embeddium']);
+  const modernFixImpact = evaluateModImpactInPack(byId.get('modernfix')!, basePack);
+  const fastBootImpact = evaluateModImpactInPack(byId.get('fastboot')!, new Set(['embeddium', 'modernfix']));
+  const xenonImpact = evaluateModImpactInPack(byId.get('xenon')!, basePack);
+
+  assert.ok(modernFixImpact.relativeImpactPct >= 10, `Expected ModernFix relativeImpactPct >= 10, got ${modernFixImpact.relativeImpactPct}`);
+  assert.ok(modernFixImpact.impactPoints >= 75, `Expected ModernFix impactPoints >= 75, got ${modernFixImpact.impactPoints}`);
+  assert.equal(fastBootImpact.relativeImpactPct, 0);
+  assert.equal(fastBootImpact.impactPoints, 0);
+  assert.equal(fastBootImpact.coUsageVerdict, 'redundant');
+  assert.ok(xenonImpact.relativeImpactPct < 0);
+  assert.ok(xenonImpact.impactPoints < 0);
+  assert.equal(xenonImpact.coUsageVerdict, 'conflict');
+
+  // 2. Hardware & mode scaling: Krypton Reno (server > singleplayer) and Nvidium (NVIDIA > AMD/Intel)
+  const serverPrefs: AssemblyPreferences = { ...INITIAL_BUILDER_PREFS, mode: 'server' };
+  const singlePrefs: AssemblyPreferences = { ...INITIAL_BUILDER_PREFS, mode: 'singleplayer' };
+  const kryptonServer = evaluateModImpactInPack(byId.get('krypton-reno')!, basePack, undefined, serverPrefs);
+  const kryptonSingle = evaluateModImpactInPack(byId.get('krypton-reno')!, basePack, undefined, singlePrefs);
+  assert.ok(kryptonServer.impactPoints > kryptonSingle.impactPoints);
+  assert.ok(kryptonServer.relativeImpactPct >= kryptonSingle.relativeImpactPct);
+
+  const nvidiaPrefs: AssemblyPreferences = { ...INITIAL_BUILDER_PREFS, gpu: 'nvidia' };
+  const amdPrefs: AssemblyPreferences = { ...INITIAL_BUILDER_PREFS, gpu: 'amd-intel' };
+  const nvidiumNvidia = evaluateModImpactInPack(byId.get('nvidium')!, new Set(['emberbium', 'sinytra-connector', 'forgified-fabric-api']), undefined, nvidiaPrefs);
+  const nvidiumAmd = evaluateModImpactInPack(byId.get('nvidium')!, new Set(['emberbium', 'sinytra-connector', 'forgified-fabric-api']), undefined, amdPrefs);
+  assert.ok(nvidiumNvidia.relativeImpactPct > nvidiumAmd.relativeImpactPct);
+
+  // 3. Assembly score reflects penalties when adding a conflict
+  const cleanSummary = summarizeAssemblyImpact(['embeddium', 'modernfix', 'ferritecore', 'radium-re-reforged']);
+  const clashSummary = summarizeAssemblyImpact(['embeddium', 'modernfix', 'ferritecore', 'radium-re-reforged', 'xenon']);
+  assert.ok(cleanSummary.assemblyScore > clashSummary.assemblyScore + 15);
+
+  // 4. Deepened co-usage checks: Calm The Leaks needs AllTheLeaks; GeckoLib Optimizer + BetterFPS overlap & scale with GeckoLib
+  const calmWarning = analyzeSelection(['modernfix', 'calm-the-leaks']);
+  assert.ok(calmWarning.warnings.some(w => w.modId === 'calm-the-leaks' && w.fixModIds?.includes('alltheleaks-memory-leak-fix')));
+
+  const geckoOverlap = analyzeSelection(['geckolib', 'geckolib-animation-optimizer', 'geckolibbetterfps']);
+  assert.ok(geckoOverlap.warnings.some(w => w.modId === 'geckolib-animation-optimizer' && w.severity === 'yellow'));
+
+  const geckoWithout = evaluateModImpactInPack(byId.get('geckolibbetterfps')!, new Set(['embeddium']));
+  const geckoWith = evaluateModImpactInPack(byId.get('geckolibbetterfps')!, new Set(['embeddium', 'geckolib']));
+  assert.equal(geckoWithout.relativeImpactPct, 0);
+  assert.ok(geckoWith.impactPoints > geckoWithout.impactPoints);
+  assert.equal(geckoWith.coUsageVerdict, 'synergy');
+
+  // 5. Analog comparison engine: Radium Reforged -> Radium Re-Reforged (better-replacement), Embeddium -> Alloyium (canUseTogether: true) vs Xenon (false)
+  const radiumAnalogs = getModAnalogsComparison(byId.get('radium-reforged')!, new Set(['embeddium', 'radium-reforged']));
+  const radiumReEntry = radiumAnalogs.find(a => a.mod.id === 'radium-re-reforged');
+  assert.ok(radiumReEntry, 'Expected Radium Re-Reforged in Radium Reforged analog comparison');
+  assert.equal(radiumReEntry.relation, 'better-replacement');
+  assert.equal(radiumReEntry.canUseTogether, false);
+  assert.ok(radiumReEntry.relativeDeltaPoints > 0);
+
+  const embeddiumAnalogs = getModAnalogsComparison(byId.get('embeddium')!, new Set(['embeddium']));
+  const alloyiumEntry = embeddiumAnalogs.find(a => a.mod.id === 'alloyium');
+  assert.ok(alloyiumEntry && alloyiumEntry.canUseTogether === true);
+
+  const emberbiumAnalogs = getModAnalogsComparison(byId.get('emberbium')!, new Set(['emberbium']));
+  const emberOculus = emberbiumAnalogs.find(a => a.mod.id === 'oculus');
+  assert.ok(emberOculus && emberOculus.canUseTogether === false && emberOculus.relation === 'conflict');
+
+  const nvidiumAnalogs = getModAnalogsComparison(byId.get('nvidium')!, new Set(['emberbium', 'sinytra-connector', 'forgified-fabric-api', 'nvidium']));
+  const dhEntry = nvidiumAnalogs.find(a => a.mod.id === 'distant-horizons');
+  assert.ok(dhEntry && dhEntry.canUseTogether === true);
+});
+
+test('resource & hardware trade-off engine: GPU/VRAM/CPU/RAM profiles and assembly hardwareSummary', async () => {
+  const { getModResourceProfile, evaluateModImpactInPack, summarizeAssemblyImpact } = await import('./modAnalyzer.ts');
+  const byId = new Map(MODS_DATABASE.map(m => [m.id, m]));
+
+  // Every mod in the database resolves to a non-empty valid resource profile
+  for (const m of MODS_DATABASE) {
+    const rp = getModResourceProfile(m);
+    assert.ok(rp.gains.length > 0, `Empty gains for ${m.id}`);
+    assert.ok(rp.costs.length > 0, `Empty costs for ${m.id}`);
+    assert.ok(rp.shortTag.length > 0, `Empty shortTag for ${m.id}`);
+    assert.ok(rp.tradeoffNote.length > 0, `Empty tradeoffNote for ${m.id}`);
+  }
+
+  // Nvidium & Accelerated Rendering trade GPU + VRAM for FPS & CPU relief
+  const nvidiumProf = getModResourceProfile(byId.get('nvidium')!);
+  assert.equal(nvidiumProf.hasTradeoff, true);
+  assert.ok(nvidiumProf.gpuLoad >= 1);
+  assert.equal(nvidiumProf.vramLoad, 2);
+  assert.equal(nvidiumProf.cpuLoad, -1);
+
+  const accelProf = getModResourceProfile(byId.get('accelerated-rendering')!);
+  assert.equal(accelProf.hasTradeoff, true);
+  assert.equal(accelProf.gpuLoad, 2);
+  assert.equal(accelProf.vramLoad, 2);
+  assert.equal(accelProf.cpuLoad, -1);
+
+  // AMD FSR upscaler reduces GPU load at the cost of clarity
+  const fsrProf = getModResourceProfile(byId.get('amd-fsr-upscaler-render-scale-for-embeddium')!);
+  assert.equal(fsrProf.hasTradeoff, true);
+  assert.equal(fsrProf.gpuLoad, -2);
+
+  // Distant Horizons & C2MEF push CPU + RAM
+  const dhProf = getModResourceProfile(byId.get('distant-horizons')!);
+  assert.equal(dhProf.cpuLoad, 2);
+  assert.ok(dhProf.ramLoad >= 1);
+
+  const c2mefProf = getModResourceProfile(byId.get('concurrent-chunk-management-engine-forge-c2me')!);
+  assert.equal(c2mefProf.cpuLoad, 2);
+  assert.ok(c2mefProf.ramLoad >= 1);
+
+  // ModernFix & FerriteCore save RAM (-2)
+  assert.equal(getModResourceProfile(byId.get('modernfix')!).ramLoad, -2);
+  assert.equal(getModResourceProfile(byId.get('ferritecore')!).ramLoad, -2);
+
+  // evaluateModImpactInPack attaches resourceProfile
+  const impact = evaluateModImpactInPack(byId.get('alloyium')!, new Set(['embeddium']));
+  assert.equal(impact.resourceProfile.gpuLoad, 1);
+  assert.equal(impact.resourceProfile.hasTradeoff, true);
+
+  // summarizeAssemblyImpact aggregates hardwareSummary accurately
+  const summary = summarizeAssemblyImpact([
+    'embeddium',
+    'alloyium',
+    'accelerated-rendering',
+    'distant-horizons',
+    'modernfix',
+    'ferritecore',
+  ]);
+  assert.ok(summary.hardwareSummary.highGpuIds.includes('alloyium'));
+  assert.ok(summary.hardwareSummary.highGpuIds.includes('accelerated-rendering'));
+  assert.ok(summary.hardwareSummary.highVramIds.includes('accelerated-rendering'));
+  assert.ok(summary.hardwareSummary.highCpuIds.includes('distant-horizons'));
+  assert.ok(summary.hardwareSummary.ramSaverIds.includes('modernfix'));
+  assert.ok(summary.hardwareSummary.ramSaverIds.includes('ferritecore'));
+});
 
 

@@ -8,6 +8,7 @@ import type {
   SmartToggleResult,
 } from './modTypes.ts';
 import {
+  EXCLUSIVE_ENGINE_POOLS,
   FABRIC_TO_FORGE_SWAP,
   MOD_BY_ID,
   getDirectDependencies,
@@ -459,36 +460,49 @@ export function smartFixAssembly(selectedIds: string[], prefs?: AssemblyPreferen
     }
   }
 
-  for (const g of MOD_GROUPS) {
-    if (!g.exclusive) continue;
-    const addonSet = new Set(g.addonIds);
-    const pool = g.memberIds.filter(id => !addonSet.has(id));
+  for (const [groupId, pool] of Object.entries(EXCLUSIVE_ENGINE_POOLS)) {
+    const g = MOD_GROUPS.find(grp => grp.id === groupId);
     const chosen = pool.filter(id => next.has(id));
     if (chosen.length > 1) {
       chosen.sort((a, b) => {
         if (focusId && a === focusId) return -1;
         if (focusId && b === focusId) return 1;
-        if (a === g.leaderId) return -1;
-        if (b === g.leaderId) return 1;
+        if (g && a === g.leaderId) return -1;
+        if (g && b === g.leaderId) return 1;
         return getModEffectivenessScore(MOD_BY_ID.get(b)!) - getModEffectivenessScore(MOD_BY_ID.get(a)!);
       });
       chosen.slice(1).forEach(id => next.delete(id));
     }
   }
 
-  if (next.has('nvidium') && next.has('oculus')) {
+  if ((next.has('nvidium') || next.has('nvidium-forged')) && next.has('oculus')) {
     if (focusId === 'nvidium' || focusId === 'nvidium-forged') next.delete('oculus');
-    else if (focusId === 'oculus') next.delete('nvidium');
-    else next.delete(prefs?.useShaders ? 'nvidium' : 'oculus');
+    else if (focusId === 'oculus') {
+      next.delete('nvidium');
+      next.delete('nvidium-forged');
+    } else if (prefs?.useShaders) {
+      next.delete('nvidium');
+      next.delete('nvidium-forged');
+    } else {
+      next.delete('oculus');
+    }
   }
-  if (next.has('nvidium') && next.has('emberlens')) {
+  if ((next.has('nvidium') || next.has('nvidium-forged')) && next.has('emberlens')) {
     if (focusId === 'nvidium' || focusId === 'nvidium-forged') next.delete('emberlens');
-    else if (focusId === 'emberlens' || focusId === 'emberbium') next.delete('nvidium');
-    else next.delete(prefs?.useShaders ? 'nvidium' : 'emberlens');
+    else if (focusId === 'emberlens' || focusId === 'emberbium') {
+      next.delete('nvidium');
+      next.delete('nvidium-forged');
+    } else if (prefs?.useShaders) {
+      next.delete('nvidium');
+      next.delete('nvidium-forged');
+    } else {
+      next.delete('emberlens');
+    }
   }
-  if (next.has('nvidium') && next.has('alloyium')) {
+  if ((next.has('nvidium') || next.has('nvidium-forged')) && next.has('alloyium')) {
     if (focusId === 'alloyium') {
       next.delete('nvidium');
+      next.delete('nvidium-forged');
     } else if (focusId === 'nvidium' || focusId === 'nvidium-forged') {
       next.delete('alloyium');
     } else {
@@ -497,11 +511,32 @@ export function smartFixAssembly(selectedIds: string[], prefs?: AssemblyPreferen
         !prefs?.useShaders &&
         prefs?.allowSinytra !== false &&
         prefs?.portStrategy !== 'native-forge';
-      next.delete(keepNvidium ? 'alloyium' : 'nvidium');
+      if (keepNvidium) {
+        next.delete('alloyium');
+      } else {
+        next.delete('nvidium');
+        next.delete('nvidium-forged');
+      }
     }
   }
-  if (next.has('nvidium') && next.has('revidium-accedium')) {
-    next.delete(focusId === 'revidium-accedium' ? 'nvidium' : 'revidium-accedium');
+  if ((next.has('nvidium') || next.has('nvidium-forged')) && next.has('revidium-accedium')) {
+    if (focusId === 'revidium-accedium') {
+      next.delete('nvidium');
+      next.delete('nvidium-forged');
+    } else {
+      next.delete('revidium-accedium');
+    }
+  }
+  if (next.has('alloyium') && next.has('revidium-accedium')) {
+    next.delete(focusId === 'revidium-accedium' ? 'alloyium' : 'revidium-accedium');
+  }
+  if (next.has('revidium-accedium') && (next.has('oculus') || next.has('emberlens'))) {
+    if (focusId === 'revidium-accedium') {
+      next.delete('oculus');
+      next.delete('emberlens');
+    } else {
+      next.delete('revidium-accedium');
+    }
   }
   if (next.has('oculus') && next.has('emberlens')) {
     if (focusId === 'emberlens' || focusId === 'emberbium' || (next.has('emberbium') && !next.has('embeddium'))) {
@@ -529,6 +564,20 @@ export function smartFixAssembly(selectedIds: string[], prefs?: AssemblyPreferen
       next.delete('c2mer');
     }
   }
+  if (
+    next.has('hc-harichunk') &&
+    (next.has('c2me-concurrent-chunk-management-engine') ||
+      next.has('concurrent-chunk-management-engine-forge-c2me') ||
+      next.has('c2mer'))
+  ) {
+    if (focusId === 'hc-harichunk') {
+      next.delete('c2me-concurrent-chunk-management-engine');
+      next.delete('concurrent-chunk-management-engine-forge-c2me');
+      next.delete('c2mer');
+    } else {
+      next.delete('hc-harichunk');
+    }
+  }
   if (next.has('vmp-forge') && next.has('very-many-players-vmp')) {
     if (focusId === 'very-many-players-vmp') next.delete('vmp-forge');
     else if (focusId === 'vmp-forge') next.delete('very-many-players-vmp');
@@ -537,6 +586,9 @@ export function smartFixAssembly(selectedIds: string[], prefs?: AssemblyPreferen
   }
   if (next.has('noisiumed') && next.has('noisium')) {
     next.delete(focusId === 'noisium' ? 'noisiumed' : 'noisium');
+  }
+  if (next.has('dynamicrenderdistance') && next.has('drd-dynamic-render-distance')) {
+    next.delete(focusId === 'drd-dynamic-render-distance' ? 'dynamicrenderdistance' : 'drd-dynamic-render-distance');
   }
   if (next.has('modernfix') && next.has('dashloader')) {
     next.delete('dashloader');

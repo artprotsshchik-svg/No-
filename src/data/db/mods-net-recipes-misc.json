@@ -2707,7 +2707,7 @@
     "groupId": "recipes-jei",
     "groupTitle": "Рецепты, JEI/EMI и достижения",
     "isGroupLeader": false,
-    "isGroupAddon": false,
+    "isGroupAddon": true,
     "addons": [],
     "coveredBy": "",
     "recipeEcosystem": "emi-or-jei"

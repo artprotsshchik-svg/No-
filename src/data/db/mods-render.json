@@ -2644,7 +2644,10 @@
     "isGroupLeader": false,
     "isGroupAddon": false,
     "addons": [],
-    "coveredBy": ""
+    "coveredBy": "",
+    "supersededWhenAll": [
+      "distant-horizons"
+    ]
   },
   {
     "id": "farplanetwo",
@@ -2692,6 +2695,9 @@
     "coveredBy": "",
     "supersededBy": [
       "bobby-reforged"
+    ],
+    "supersededWhenAll": [
+      "distant-horizons"
     ]
   },
   {

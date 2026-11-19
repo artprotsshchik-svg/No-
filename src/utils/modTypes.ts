@@ -92,3 +92,108 @@ export interface SupersederInfo {
   isActiveInSelection: boolean;
   reason: string;
 }
+
+export type ModImpactLevel =
+  | 'core'
+  | 'high'
+  | 'medium'
+  | 'conditional'
+  | 'support'
+  | 'diagnostic'
+  | 'zero'
+  | 'negative';
+
+export type InteractionKind = 'synergy' | 'overlap' | 'dependency' | 'conflict' | 'context';
+
+export type CoUsageVerdict = 'synergy' | 'solo' | 'overlap' | 'redundant' | 'dependency' | 'conflict';
+
+export interface ModInteractionNote {
+  kind: InteractionKind;
+  targetIds: string[];
+  targetNames: string[];
+  summary: string;
+  impactDelta: number;
+}
+
+export type ResourceLoadDelta = -2 | -1 | 0 | 1 | 2;
+
+export interface ModResourceProfile {
+  gains: string[];
+  costs: string[];
+  shortTag: string;
+  hasTradeoff: boolean;
+  gpuLoad: ResourceLoadDelta;
+  vramLoad: ResourceLoadDelta;
+  cpuLoad: ResourceLoadDelta;
+  ramLoad: ResourceLoadDelta;
+  tradeoffNote: string;
+}
+
+export interface ContextualModImpact {
+  modId: string;
+  level: ModImpactLevel;
+  label: string;
+  contextualScore: number;
+  /** Normalized 0..100 (or negative on conflict/danger) value score in this assembly context */
+  impactPoints: number;
+  /** Marginal % change in assembly effectiveness when adding (or keeping) this mod */
+  relativeImpactPct: number;
+  inPack: boolean;
+  coUsageVerdict: CoUsageVerdict;
+  summary: string;
+  interactions: ModInteractionNote[];
+  resourceProfile: ModResourceProfile;
+  betterAnalogId?: string;
+  betterAnalogName?: string;
+  betterAnalogDeltaPoints?: number;
+}
+
+export interface AssemblySubsystemScore {
+  title: string;
+  covered: boolean;
+  score: number;
+  maxScore: number;
+}
+
+export interface AssemblyImpactSummary {
+  assemblyScore: number;
+  coveragePct: number;
+  coveredSubsystems: string[];
+  missingSubsystems: string[];
+  subsystemScores: AssemblySubsystemScore[];
+  synergies: ModInteractionNote[];
+  overlaps: ModInteractionNote[];
+  zeroOrLowImpactIds: string[];
+  networkOnlyIds: string[];
+  highVramIds: string[];
+  hardwareSummary: {
+    highGpuIds: string[];
+    highVramIds: string[];
+    highCpuIds: string[];
+    ramSaverIds: string[];
+  };
+}
+
+export type AnalogRelationKind =
+  | 'leader'
+  | 'better-replacement'
+  | 'dual-port'
+  | 'addon-synergy'
+  | 'alternative'
+  | 'overlap-duplicate'
+  | 'conflict'
+  | 'builtin-covered';
+
+export interface AnalogComparisonEntry {
+  mod: import('../data/modsData.ts').ModItem;
+  relation: AnalogRelationKind;
+  relationLabel: string;
+  canUseTogether: boolean;
+  coUsageNote: string;
+  points: number;
+  relativeDeltaPoints: number;
+  marginalPct: number;
+  isSelectedInContext: boolean;
+}
+
+

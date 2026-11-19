@@ -1,13 +1,13 @@
 {
   "schemaVersion": 2,
   "updatedAt": "16.11.2026",
-  "sha256": "57d55be974e15795e7afec7fd66fe50f839500864a4ccc134d16c87c5b991e0d",
-  "bytes": 475150,
+  "sha256": "0f10b46200e45dd69fcd5608b58e319659a55b0633a88023c777985d3efcc806",
+  "bytes": 471197,
   "counts": {
     "mods": 510,
     "groups": 21,
-    "presets": 7,
-    "rules": 21,
+    "presets": 2,
+    "rules": 26,
     "golden": 27
   },
   "bundleFile": "db-bundle.json"

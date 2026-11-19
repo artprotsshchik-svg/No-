@@ -10,6 +10,12 @@
       "Emberbium",
       "Prismanium",
       "Polidium",
+      "Accelerium",
+      "Unbinilium",
+      "Aluminium",
+      "Fermium",
+      "XFermium",
+      "Carbons",
       "Sodium",
       "VulkanMod"
     ],
@@ -24,24 +30,44 @@
       "Embeddium",
       "Emberbium",
       "Xenon",
+      "Xenon Debloated",
+      "Rubidium",
+      "Prismanium",
+      "Polidium",
+      "Accelerium",
+      "Unbinilium",
+      "Aluminium",
+      "Fermium",
+      "XFermium",
+      "Carbons",
       "ModernFix",
       "Flywheel",
       "Oculus",
-      "Emberlens"
+      "Emberlens",
+      "ImmediatelyFast",
+      "Alloyium",
+      "Flerovium",
+      "Accelerated Rendering",
+      "(Sodium) Chloride",
+      "Embeddium Extras",
+      "Nvidium",
+      "Distant Horizons",
+      "GPUTape"
     ],
-    "explanation": "OptiFine — закрытый монолит, переписывающий базовые классы рендеринга Minecraft. При совместной установке с современными модами (Embeddium, Flywheel, ModernFix, Oculus, Emberlens) игра гарантированно падает с ошибкой NoSuchMethodError / IncompatibleClassChangeError при запуске.",
-    "recommendation": "Полностью удалите OptiFine из папки mods. Вся его функциональность делится на: Embeddium (FPS), Oculus (шейдеры), EBER (сундуки), Embeddium Extras / Chloride (зум и детали)."
+    "explanation": "OptiFine — закрытый монолит, переписывающий базовые классы рендеринга Minecraft. При совместной установке с современными модами (Embeddium, Emberbium, Flywheel, ModernFix, Oculus, Emberlens, ImmediatelyFast, Nvidium, Distant Horizons) игра гарантированно падает или ломает рендер.",
+    "recommendation": "Полностью удалите OptiFine из папки mods. Вся его функциональность делится на: Embeddium (FPS), Oculus (шейдеры), EBER (сундуки), (Sodium) Chloride / Embeddium Extras (зум и детали)."
   },
   {
     "title": "Конфликт Nvidium и шейдеров (Oculus / Emberlens / Iris)",
     "category": "Рендер, culling и FPS",
     "conflictingMods": [
       "Nvidium",
+      "Nvidium Forged",
       "Oculus",
       "Emberlens",
       "Iris Shaders"
     ],
-    "explanation": "Nvidium использует прямой конвейер Mesh Shaders OpenGL, который несовместим с перехватом фреймбуферов шейдер-паков Oculus/Emberlens/Iris. Одновременная активация выключает Nvidium или вызывает поломку рендера.",
+    "explanation": "Nvidium (включая конфиг-адаптер Nvidium Forged) использует прямой конвейер Mesh Shaders OpenGL, который несовместим с перехватом фреймбуферов шейдер-паков Oculus/Emberlens/Iris. Одновременная активация выключает Nvidium или вызывает поломку рендера.",
     "recommendation": "Играете БЕЗ шейдеров на NVIDIA RTX — берите Nvidium. Нужны шейдеры — используйте Oculus (+ Embeddium) или Emberlens (+ Emberbium) + Distant Horizons."
   },
   {
@@ -56,10 +82,39 @@
     "recommendation": "Используйте либо связку Embeddium + Oculus, либо связку Emberbium + Emberlens."
   },
   {
+    "title": "Конфликт Emberbium с аддонами Embeddium (Oculus / Alloyium)",
+    "category": "Рендер, culling и FPS",
+    "conflictingMods": [
+      "Emberbium",
+      "Oculus",
+      "Faster Iris Shadow Mapper",
+      "Alloyium",
+      "Revidium / Acedium",
+      "Maple Mesh Render",
+      "Sodium Sightline",
+      "Sodium Streamline",
+      "Sodium Fovea",
+      "Embeddium x Polytone Block Colormap Fix (Polytone)"
+    ],
+    "explanation": "Emberbium переписывает внутреннее устройство Embeddium (Radix Sort и структуру мешей), из-за чего жёстко привязанные к Embeddium 0.3.31 моды (Oculus, Faster Iris Shadow Mapper, Alloyium, Acedium, Maple Mesh Render, Sightline/Streamline/Fovea) с ним несовместимы.",
+    "recommendation": "Для Oculus, Alloyium и узкоспециализированных аддонов Embeddium 0.3.31 используйте классический Embeddium; для Emberbium используйте Nvidium (.connector), Flerovium, Chloride или Emberlens."
+  },
+  {
+    "title": "Конфликт Emberlens с Embeddium",
+    "category": "Рендер, culling и FPS",
+    "conflictingMods": [
+      "Embeddium",
+      "Emberlens"
+    ],
+    "explanation": "Emberlens создан специально под форк Emberbium и не работает поверх классического Embeddium.",
+    "recommendation": "Для Embeddium ставьте Oculus; для Emberlens замените Embeddium на Emberbium."
+  },
+  {
     "title": "Конфликт GPU-рендеров чанков (Nvidium ↔ Alloyium / Acedium)",
     "category": "Рендер, culling и FPS",
     "conflictingMods": [
       "Nvidium",
+      "Nvidium Forged",
       "Alloyium",
       "Revidium / Acedium"
     ],
@@ -67,14 +122,15 @@
     "recommendation": "На NVIDIA без шейдеров берите Nvidium; для AMD/Intel, нативного Forge без Sinytra или игры с шейдерами Oculus берите Alloyium."
   },
   {
-    "title": "Дублирование версий C2ME (Fabric C2ME ↔ C2ME-Forge ↔ C2MER)",
+    "title": "Дублирование версий C2ME (Fabric C2ME ↔ C2ME-Forge ↔ C2MER ↔ HariChunk)",
     "category": "Чанки и генерация мира",
     "conflictingMods": [
       "C2ME (Concurrent Chunk Management Engine)",
       "Concurrent Chunk Management Engine - Forge (C2MEF)",
-      "C2MER"
+      "C2MER",
+      "HC-HariChunk"
     ],
-    "explanation": "Все три варианта реализуют многопоточное распараллеливание чанков C2ME. Одновременная установка двух портов вызывает конфликт миксинов и потоков генерации мира.",
+    "explanation": "Все эти варианты реализуют многопоточное распараллеливание чанков C2ME. Одновременная установка двух портов вызывает конфликт миксинов и потоков генерации мира.",
     "recommendation": "Выберите строго один вариант: оригинальный C2ME через Sinytra Connector либо нативный порт C2ME-Forge (C2MEF)."
   },
   {
@@ -115,7 +171,7 @@
     "category": "Рендер, culling и FPS",
     "conflictingMods": [
       "CullLessLeaves Reforged",
-      "OptiLeaves",
+      "Tritium",
       "Leaves Culling",
       "Sodium Leaf Culling (Unofficial)",
       "Sodium/Embeddium Leaf Culling"
@@ -254,5 +310,38 @@
     ],
     "explanation": "Оба мода перехватывают GPU-инстансинг сущностей OpenGL 4.6 одним и тем же конвейером. Совместная установка несовместима.",
     "recommendation": "Используйте основной Accelerated Rendering от Argon4W."
+  },
+  {
+    "title": "Конфликт версий Spark (Официальный Spark ↔ Форк Java 25)",
+    "category": "Профилировщики и мониторинг",
+    "conflictingMods": [
+      "Spark",
+      "Spark Profiler - Au Naturel Edit (под Java 25)"
+    ],
+    "explanation": "Оба мода регистрируют один и тот же mod id \"spark\". Для Forge 1.20.1 на Java 17/21 используйте только официальный Spark.",
+    "recommendation": "Удалите нишевый форк под Java 25 и оставьте официальный Spark."
+  },
+  {
+    "title": "Конфликт Acedium/Revidium с шейдерами (Oculus / Emberlens)",
+    "category": "Рендер, culling и FPS",
+    "conflictingMods": [
+      "Revidium / Acedium",
+      "Oculus",
+      "Emberlens",
+      "Iris Shaders"
+    ],
+    "explanation": "Как и Nvidium, порты на базе OpenGL Mesh Shaders (Revidium / Acedium) обходят стандартные буферы и пайплайн шейдер-паков Oculus/Iris, вызывая поломку рендера или отключение шейдеров.",
+    "recommendation": "Для игры с шейдерами используйте Oculus (+ Embeddium + Alloyium) и удалите Revidium / Acedium."
+  },
+  {
+    "title": "Конфликт LOD-рендереров (Distant Horizons ↔ Voxy / FarPlaneTwo)",
+    "category": "Прослойка Fabric и LOD",
+    "conflictingMods": [
+      "Distant Horizons",
+      "Voxy",
+      "FarPlaneTwo"
+    ],
+    "explanation": "Все эти моды создают отдельный сверхдальний LOD-конвейер ландшафта за пределами ванильных чанков. Одновременная работа двух LOD-движков вызывает дублирование геометрии, утечки памяти и краши (Voxy к тому же требует Fabric 1.20.4+).",
+    "recommendation": "Для Forge 1.20.1 используйте исключительно Distant Horizons (+ Distant Horizons Memory Fix)."
   }
 ]
